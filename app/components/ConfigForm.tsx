@@ -1,8 +1,8 @@
 "use client";
 
-import type { Config, CompanyInfo, Persona } from "@/app/types/calendar";
+import type { Config, CompanyInfo, Person } from "@/app/types/calendar";
 
-function defaultPersona(id: string): Persona {
+function defaultPerson(id: string): Person {
   return { id, name: "", description: "" };
 }
 
@@ -25,29 +25,29 @@ interface ConfigFormProps {
 }
 
 export function ConfigForm({ config, onChange, onSubmit, disabled }: ConfigFormProps) {
-  const { company, personas, subreddits, queries, postsPerWeek } = config;
+  const { company, people, subreddits, queries, postsPerWeek } = config;
 
   const setCompany = (c: Partial<CompanyInfo>) => {
     onChange({ ...config, company: { ...company, ...c } });
   };
 
-  const setPersonas = (p: Persona[]) => {
-    onChange({ ...config, personas: p });
+  const setPeople = (p: Person[]) => {
+    onChange({ ...config, people: p });
   };
 
-  const addPersona = () => {
-    const id = `persona-${Date.now()}`;
-    setPersonas([...personas, defaultPersona(id)]);
+  const addPerson = () => {
+    const id = `person-${Date.now()}`;
+    setPeople([...people, defaultPerson(id)]);
   };
 
-  const removePersona = (id: string) => {
-    if (personas.length <= 2) return;
-    setPersonas(personas.filter((p) => p.id !== id));
+  const removePerson = (id: string) => {
+    if (people.length <= 2) return;
+    setPeople(people.filter((p) => p.id !== id));
   };
 
-  const updatePersona = (id: string, updates: Partial<Persona>) => {
-    setPersonas(
-      personas.map((p) => (p.id === id ? { ...p, ...updates } : p))
+  const updatePerson = (id: string, updates: Partial<Person>) => {
+    setPeople(
+      people.map((p) => (p.id === id ? { ...p, ...updates } : p))
     );
   };
 
@@ -65,8 +65,8 @@ export function ConfigForm({ config, onChange, onSubmit, disabled }: ConfigFormP
 
   const valid =
     company.name.trim() &&
-    personas.length >= 2 &&
-    personas.every((p) => p.name.trim()) &&
+    people.length >= 2 &&
+    people.every((p) => p.name.trim()) &&
     subreddits.length >= 1 &&
     queries.length >= 1 &&
     postsPerWeek >= 1;
@@ -116,40 +116,40 @@ export function ConfigForm({ config, onChange, onSubmit, disabled }: ConfigFormP
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
-            Personas (min 2)
+            People (min 2)
           </h2>
           <button
             type="button"
-            onClick={addPersona}
+            onClick={addPerson}
             className="rounded bg-zinc-200 px-3 py-1 text-sm font-medium text-zinc-800 hover:bg-zinc-300 dark:bg-zinc-600 dark:text-zinc-100 dark:hover:bg-zinc-500"
           >
-            Add persona
+            Add person
           </button>
         </div>
         <ul className="flex flex-col gap-2">
-          {personas.map((p) => (
+          {people.map((p) => (
             <li
               key={p.id}
               className="flex flex-wrap items-center gap-2 rounded border border-zinc-200 bg-zinc-50 p-2 dark:border-zinc-600 dark:bg-zinc-800/50"
             >
               <input
                 type="text"
-                placeholder="Persona name"
+                placeholder="Person name"
                 value={p.name}
-                onChange={(e) => updatePersona(p.id, { name: e.target.value })}
+                onChange={(e) => updatePerson(p.id, { name: e.target.value })}
                 className="flex-1 min-w-[120px] rounded border border-zinc-300 bg-white px-3 py-1.5 text-zinc-900 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100"
               />
               <input
                 type="text"
                 placeholder="Description (optional)"
                 value={p.description ?? ""}
-                onChange={(e) => updatePersona(p.id, { description: e.target.value })}
+                onChange={(e) => updatePerson(p.id, { description: e.target.value })}
                 className="flex-1 min-w-[120px] rounded border border-zinc-300 bg-white px-3 py-1.5 text-sm text-zinc-900 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100"
               />
               <button
                 type="button"
-                onClick={() => removePersona(p.id)}
-                disabled={personas.length <= 2}
+                onClick={() => removePerson(p.id)}
+                disabled={people.length <= 2}
                 className="rounded px-2 py-1 text-sm text-red-600 hover:bg-red-50 disabled:opacity-40 dark:text-red-400 dark:hover:bg-red-900/20"
               >
                 Remove

@@ -1,19 +1,18 @@
 "use client";
 
-import type { ContentCalendar } from "@/app/types/calendar";
-import type { Persona } from "@/app/types/calendar";
+import type { ContentCalendar, Person } from "@/app/types/calendar";
 import { CalendarItemCard, getDayName } from "./CalendarItemCard";
 
 const DAY_ORDER = [0, 1, 2, 3, 4, 5, 6]; // Sun..Sat
 
 interface CalendarWeekViewProps {
   calendar: ContentCalendar;
-  personas: Persona[];
+  people: Person[];
 }
 
-export function CalendarWeekView({ calendar, personas }: CalendarWeekViewProps) {
-  const personaMap = Object.fromEntries(personas.map((p) => [p.id, p]));
-  const getPersonaName = (id: string) => personaMap[id]?.name ?? id;
+export function CalendarWeekView({ calendar, people }: CalendarWeekViewProps) {
+  const personMap = Object.fromEntries(people.map((p) => [p.id, p]));
+  const getPersonName = (id: string) => personMap[id]?.name ?? id;
 
   const itemsByDay: Record<number, typeof calendar.items> = {};
   for (const d of DAY_ORDER) {
@@ -49,7 +48,7 @@ export function CalendarWeekView({ calendar, personas }: CalendarWeekViewProps) 
               {itemsByDay[dayOfWeek]?.length ? (
                 itemsByDay[dayOfWeek].map((item) => (
                   <li key={item.id}>
-                    <CalendarItemCard item={item} getPersonaName={getPersonaName} />
+                    <CalendarItemCard item={item} getPersonName={getPersonName} />
                   </li>
                 ))
               ) : (

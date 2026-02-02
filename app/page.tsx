@@ -10,9 +10,9 @@ import { CalendarWeekView } from "@/app/components/CalendarWeekView";
 function defaultConfig(): Config {
   return {
     company: { name: "", description: "", goal: "" },
-    personas: [
-      { id: "persona-1", name: "", description: "" },
-      { id: "persona-2", name: "", description: "" },
+    people: [
+      { id: "person-1", name: "", description: "" },
+      { id: "person-2", name: "", description: "" },
     ],
     subreddits: [],
     queries: [],
@@ -69,7 +69,7 @@ export default function Home() {
 
         {calendar && (
           <section className="space-y-4">
-            <CalendarWeekView calendar={calendar} personas={config.personas} />
+            <CalendarWeekView calendar={calendar} people={config.people} />
             <div className="flex flex-wrap gap-2">
               <button
                 type="button"

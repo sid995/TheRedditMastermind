@@ -5,7 +5,7 @@ export interface CompanyInfo {
   goal?: string;
 }
 
-export interface Persona {
+export interface Person {
   id: string;
   name: string;
   description?: string;
@@ -13,14 +13,14 @@ export interface Persona {
 
 export interface Config {
   company: CompanyInfo;
-  personas: Persona[];
+  people: Person[];
   subreddits: string[];
   queries: string[];
   postsPerWeek: number;
 }
 
 export interface ReplyAssignment {
-  personaId: string;
+  personId: string;
   order?: number; // 1 = first reply, 2 = second reply
 }
 
@@ -29,7 +29,7 @@ export interface CalendarItem {
   dayOfWeek: number; // 0 = Sunday, 1 = Monday, ... 6 = Saturday
   subreddit: string;
   query: string;
-  authorPersonaId: string;
+  authorPersonId: string;
   replyAssignments: ReplyAssignment[];
 }
 

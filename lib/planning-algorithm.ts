@@ -37,8 +37,8 @@ export function generateCalendar(config: Config, weekStart: Date): ContentCalend
   const seed = getWeekStart(new Date(weekStart)).getTime();
   const rng = seededRandom(seed);
 
-  const { company, personas, subreddits, queries, postsPerWeek } = config;
-  if (personas.length < 2) throw new Error("At least 2 personas required");
+  const { company, people, subreddits, queries, postsPerWeek } = config;
+  if (people.length < 2) throw new Error("At least 2 people required");
   if (subreddits.length === 0) throw new Error("At least 1 subreddit required");
   if (queries.length === 0) throw new Error("At least 1 query required");
   if (postsPerWeek < 1) throw new Error("postsPerWeek must be at least 1");
@@ -48,8 +48,8 @@ export function generateCalendar(config: Config, weekStart: Date): ContentCalend
 
   const subredditCount: Record<string, number> = Object.fromEntries(subreddits.map((s) => [s, 0]));
   const queryCount: Record<string, number> = Object.fromEntries(queries.map((q) => [q, 0]));
-  const personaAuthorCount: Record<string, number> = Object.fromEntries(personas.map((p) => [p.id, 0]));
-  const personaReplyCount: Record<string, number> = Object.fromEntries(personas.map((p) => [p.id, 0]));
+  const personAuthorCount: Record<string, number> = Object.fromEntries(people.map((p) => [p.id, 0]));
+  const personReplyCount: Record<string, number> = Object.fromEntries(people.map((p) => [p.id, 0]));
 
   /** Pick one from array, preferring indices with lower counts; countKey is key in countRecord */
   function pickWithBalance<T>(
@@ -96,26 +96,26 @@ export function generateCalendar(config: Config, weekStart: Date): ContentCalend
       : queries[Math.floor(rng() * queries.length)];
     queryCount[query] = (queryCount[query] ?? 0) + 1;
 
-    // Author persona: balance
-    const author = pickWithBalance(personas, personaAuthorCount, (p) => p.id);
-    personaAuthorCount[author.id] = (personaAuthorCount[author.id] ?? 0) + 1;
+    // Author person: balance
+    const author = pickWithBalance(people, personAuthorCount, (p) => p.id);
+    personAuthorCount[author.id] = (personAuthorCount[author.id] ?? 0) + 1;
 
-    // Reply personas: 1–2 others, with order
-    const others = personas.filter((p) => p.id !== author.id);
+    // Reply people: 1–2 others, with order
+    const others = people.filter((p) => p.id !== author.id);
     const numReplies = Math.min(
       REPLIES_PER_POST_MAX,
       others.length,
       Math.max(REPLIES_PER_POST_MIN, Math.floor(rng() * 2) + 1)
     );
-    const replyPersonas = shuffle(others)
+    const replyPeople = shuffle(others)
       .slice(0, numReplies)
-      .sort((a, b) => (personaReplyCount[a.id] ?? 0) - (personaReplyCount[b.id] ?? 0));
-    const replyAssignments: ReplyAssignment[] = replyPersonas.map((p, idx) => ({
-      personaId: p.id,
+      .sort((a, b) => (personReplyCount[a.id] ?? 0) - (personReplyCount[b.id] ?? 0));
+    const replyAssignments: ReplyAssignment[] = replyPeople.map((p, idx) => ({
+      personId: p.id,
       order: idx + 1,
     }));
-    replyPersonas.forEach((p) => {
-      personaReplyCount[p.id] = (personaReplyCount[p.id] ?? 0) + 1;
+    replyPeople.forEach((p) => {
+      personReplyCount[p.id] = (personReplyCount[p.id] ?? 0) + 1;
     });
 
     items.push({
@@ -123,7 +123,7 @@ export function generateCalendar(config: Config, weekStart: Date): ContentCalend
       dayOfWeek,
       subreddit,
       query,
-      authorPersonaId: author.id,
+      authorPersonId: author.id,
       replyAssignments,
     });
   }

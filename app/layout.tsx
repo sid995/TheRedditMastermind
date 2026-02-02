@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Reddit Mastermind – OG Tool",
-  description: "Content calendar planner for Reddit posts and persona replies",
+  description: "Content calendar planner for Reddit posts and person replies",
 };
 
 export default function RootLayout({

@@ -5,7 +5,7 @@ const DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Frid
 
 /** Export config + content calendar to SlideForge-style output Excel */
 export function exportCalendarExcel(config: Config, calendar: ContentCalendar): ArrayBuffer {
-  const { company, personas, subreddits, queries } = config;
+  const { company, people, subreddits, queries } = config;
   const rows: (string | number)[][] = [];
 
   rows.push(["Name", company.name]);
@@ -17,7 +17,7 @@ export function exportCalendarExcel(config: Config, calendar: ContentCalendar): 
   rows.push([""]);
 
   rows.push(["Username", "Info"]);
-  for (const p of personas) {
+  for (const p of people) {
     rows.push([p.name, p.description ?? ""]);
   }
   rows.push([""]);
@@ -31,9 +31,9 @@ export function exportCalendarExcel(config: Config, calendar: ContentCalendar): 
   rows.push([""]);
 
   rows.push(["post_id", "subreddit", "title", "body", "author_username", "timestamp", "keyword_ids"]);
-  const personaById = Object.fromEntries(config.personas.map((p) => [p.id, p]));
+  const personById = Object.fromEntries(config.people.map((p) => [p.id, p]));
   calendar.items.forEach((item, idx) => {
-    const authorName = personaById[item.authorPersonaId]?.name ?? item.authorPersonaId;
+    const authorName = personById[item.authorPersonId]?.name ?? item.authorPersonId;
     const dayName = DAY_NAMES[item.dayOfWeek] ?? "";
     rows.push([
       `P${idx + 1}`,

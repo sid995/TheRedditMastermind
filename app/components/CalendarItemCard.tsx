@@ -6,14 +6,14 @@ const DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Frid
 
 interface CalendarItemCardProps {
   item: CalendarItem;
-  getPersonaName: (id: string) => string;
+  getPersonName: (id: string) => string;
 }
 
-export function CalendarItemCard({ item, getPersonaName }: CalendarItemCardProps) {
-  const authorName = getPersonaName(item.authorPersonaId);
+export function CalendarItemCard({ item, getPersonName }: CalendarItemCardProps) {
+  const authorName = getPersonName(item.authorPersonId);
   const replyNames = item.replyAssignments
     .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
-    .map((r) => getPersonaName(r.personaId));
+    .map((r) => getPersonName(r.personId));
 
   return (
     <article className="rounded-lg border border-zinc-200 bg-white p-3 shadow-sm dark:border-zinc-600 dark:bg-zinc-800/50">
