@@ -36,13 +36,13 @@ export function CalendarWeekView({ calendar, people }: CalendarWeekViewProps) {
           {formatDate(weekStart)} – {formatDate(weekEnd)}
         </p>
       </header>
-      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-7">
+      <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-7">
         {DAY_ORDER.map((dayOfWeek) => (
           <Card key={dayOfWeek}>
-            <CardHeader className="py-4">
-              <CardTitle className="text-base">{getDayName(dayOfWeek)}</CardTitle>
+            <CardHeader className="py-3 sm:py-4 px-3 sm:px-6">
+              <CardTitle className="text-sm sm:text-base">{getDayName(dayOfWeek)}</CardTitle>
             </CardHeader>
-            <CardContent className="flex flex-col gap-2 pt-0">
+            <CardContent className="flex flex-col gap-2 pt-0 px-3 sm:px-6 pb-3 sm:pb-6">
               {itemsByDay[dayOfWeek]?.length ? (
                 itemsByDay[dayOfWeek].map((item) => (
                   <CalendarItemCard key={item.id} item={item} getPersonName={getPersonName} />

@@ -18,15 +18,15 @@ export function CalendarItemCard({ item, getPersonName }: CalendarItemCardProps)
 
   return (
     <Card>
-      <CardContent className="py-3">
-        <div className="flex flex-wrap items-center gap-2 text-sm">
+      <CardContent className="py-2.5 sm:py-3 px-3 sm:px-6">
+        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 text-xs sm:text-sm">
           <span className="font-medium text-muted-foreground">
             {item.subreddit}
           </span>
           <span className="text-muted-foreground">·</span>
           <span className="text-foreground">{item.query}</span>
         </div>
-        <p className="mt-2 text-sm text-card-foreground">
+        <p className="mt-1.5 sm:mt-2 text-xs sm:text-sm text-card-foreground">
           <strong>{authorName}</strong> posts
           {replyNames.length > 0 && (
             <>

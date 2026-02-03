@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { UserPlus } from "lucide-react";
+import { Loader2, UserPlus } from "lucide-react";
 
 function defaultPerson(id: string): Person {
   return { id, name: "", description: "" };
@@ -24,9 +24,10 @@ interface ConfigFormProps {
   onChange: (config: Config) => void;
   onSubmit: () => void;
   disabled?: boolean;
+  isGenerating?: boolean;
 }
 
-export function ConfigForm({ config, onChange, onSubmit, disabled }: ConfigFormProps) {
+export function ConfigForm({ config, onChange, onSubmit, disabled, isGenerating }: ConfigFormProps) {
   const { company, people, subreddits, queries, postsPerWeek } = config;
 
   const setCompany = (c: Partial<CompanyInfo>) => {
@@ -211,9 +212,19 @@ export function ConfigForm({ config, onChange, onSubmit, disabled }: ConfigFormP
         </div>
       </div>
 
-      <Button type="submit" disabled={!valid || disabled} size="lg">
-        Generate calendar
-      </Button>
+      <div className="flex flex-col gap-1">
+        <Button type="submit" disabled={!valid || disabled} size="lg">
+          {isGenerating ? (
+            <>
+              <Loader2 className="size-4 animate-spin" />
+              Generating…
+            </>
+          ) : (
+            "Generate calendar"
+          )}
+        </Button>
+        <p className="text-xs text-muted-foreground">Ctrl+Enter to generate</p>
+      </div>
     </form>
   );
 }

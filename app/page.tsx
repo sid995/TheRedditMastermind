@@ -6,6 +6,8 @@ import { generateCalendar, getNextWeekStart, getWeekStart } from "@/lib/planning
 import { exportCalendarExcel } from "@/lib/excel-io";
 import { ConfigForm } from "@/app/components/ConfigForm";
 import { CalendarWeekView } from "@/app/components/CalendarWeekView";
+import { getOnboardingDone } from "@/app/components/OnboardingDialog";
+import { useOnboarding } from "@/app/contexts/OnboardingContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CalendarPlus, Copy, FileDown } from "lucide-react";
@@ -80,6 +82,8 @@ export default function Home() {
   const [calendar, setCalendar] = useState<ContentCalendar | null>(null);
   const [currentWeekStart, setCurrentWeekStart] = useState<Date | null>(null);
   const [hydrated, setHydrated] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const { openOnboarding } = useOnboarding();
 
   useEffect(() => {
     const savedConfig = loadConfig();
@@ -91,6 +95,13 @@ export default function Home() {
     }
     setHydrated(true);
   }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    if (!loadCalendar() && !getOnboardingDone()) {
+      openOnboarding();
+    }
+  }, [hydrated, openOnboarding]);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -111,20 +122,28 @@ export default function Home() {
   }, [calendar, hydrated]);
 
   const handleGenerateCalendar = useCallback(() => {
+    setIsGenerating(true);
     const weekStart = getWeekStart(new Date());
-    const cal = generateCalendar(config, weekStart);
-    setCalendar(cal);
-    setCurrentWeekStart(new Date(cal.weekStart));
-    toast.success("Calendar generated");
+    setTimeout(() => {
+      const cal = generateCalendar(config, weekStart);
+      setCalendar(cal);
+      setCurrentWeekStart(new Date(cal.weekStart));
+      setIsGenerating(false);
+      toast.success("Calendar generated");
+    }, 0);
   }, [config]);
 
   const handleGenerateNextWeek = useCallback(() => {
     if (!config || !currentWeekStart) return;
+    setIsGenerating(true);
     const nextStart = getNextWeekStart(currentWeekStart);
-    const cal = generateCalendar(config, nextStart);
-    setCalendar(cal);
-    setCurrentWeekStart(new Date(cal.weekStart));
-    toast.success("Next week generated");
+    setTimeout(() => {
+      const cal = generateCalendar(config, nextStart);
+      setCalendar(cal);
+      setCurrentWeekStart(new Date(cal.weekStart));
+      setIsGenerating(false);
+      toast.success("Next week generated");
+    }, 0);
   }, [config, currentWeekStart]);
 
   const handleExportExcel = useCallback(() => {
@@ -185,11 +204,13 @@ export default function Home() {
                 config={config}
                 onChange={setConfig}
                 onSubmit={handleGenerateCalendar}
+                disabled={isGenerating}
+                isGenerating={isGenerating}
               />
             </CardContent>
           </Card>
 
-          {!calendar && (
+          {!calendar && !isGenerating && (
             <Card className="border-dashed">
               <CardContent className="flex flex-col items-center justify-center py-12 text-center">
                 <p className="text-muted-foreground mb-4">
@@ -201,9 +222,44 @@ export default function Home() {
               </CardContent>
             </Card>
           )}
+
+          {isGenerating && (
+            <section className="w-full px-4 pb-8 sm:px-6 lg:px-8 xl:px-12">
+              <div className="mx-auto w-full max-w-[1600px]">
+                <Card>
+                  <CardContent className="pt-6 space-y-6">
+                    <div className="flex flex-col gap-6">
+                      <header className="flex flex-wrap items-baseline justify-between gap-2">
+                        <div className="h-7 w-48 rounded bg-muted animate-pulse" />
+                        <div className="h-5 w-32 rounded bg-muted animate-pulse" />
+                      </header>
+                      <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-7">
+                        {[0, 1, 2, 3, 4, 5, 6].map((d) => (
+                          <Card key={d}>
+                            <CardHeader className="py-4">
+                              <div className="h-4 w-20 rounded bg-muted animate-pulse" />
+                            </CardHeader>
+                            <CardContent className="flex flex-col gap-2 pt-0">
+                              <div className="h-16 rounded bg-muted/80 animate-pulse" />
+                              <div className="h-16 rounded bg-muted/80 animate-pulse" />
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <div className="h-9 w-36 rounded-md bg-muted animate-pulse" />
+                      <div className="h-9 w-32 rounded-md bg-muted animate-pulse" />
+                      <div className="h-9 w-28 rounded-md bg-muted animate-pulse" />
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </section>
+          )}
         </div>
 
-        {calendar && (
+        {calendar && !isGenerating && (
           <section className="w-full px-4 pb-8 sm:px-6 lg:px-8 xl:px-12">
             <div className="mx-auto w-full max-w-[1600px]">
               <Card>

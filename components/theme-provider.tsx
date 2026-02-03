@@ -13,6 +13,7 @@ export function ThemeProvider({
       defaultTheme="system"
       enableSystem
       disableTransitionOnChange
+      themes={["light", "dark", "system", "sepia"]}
       {...props}
     >
       {children}
