@@ -75,18 +75,25 @@ export function ConfigTemplatePicker({ config, onLoad, disabled }: ConfigTemplat
           size="sm"
           onClick={() => setSaveOpen(true)}
           disabled={disabled}
+          className="min-h-[44px] touch-manipulation"
         >
-          <Save className="size-4" />
+          <Save className="size-4 shrink-0" />
           Save as template
         </Button>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button type="button" variant="outline" size="sm" disabled={disabled || templates.length === 0}>
-              <FolderOpen className="size-4" />
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={disabled || templates.length === 0}
+              className="min-h-[44px] touch-manipulation"
+            >
+              <FolderOpen className="size-4 shrink-0" />
               Load template
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="max-h-[280px] overflow-y-auto">
+          <DropdownMenuContent align="start" className="max-h-[280px] overflow-y-auto min-w-[220px]">
             {templates.length === 0 ? (
               <DropdownMenuItem disabled>No templates saved</DropdownMenuItem>
             ) : (
@@ -94,14 +101,14 @@ export function ConfigTemplatePicker({ config, onLoad, disabled }: ConfigTemplat
                 <DropdownMenuItem
                   key={t.id}
                   onSelect={() => handleLoad(t)}
-                  className="flex items-center justify-between gap-2"
+                  className="flex items-center justify-between gap-2 min-h-[44px] py-2"
                 >
-                  <span className="truncate">{t.name}</span>
+                  <span className="truncate flex-1 min-w-0">{t.name}</span>
                   <Button
                     type="button"
                     variant="ghost"
                     size="icon"
-                    className="size-6 shrink-0 opacity-70 hover:opacity-100"
+                    className="size-8 min-w-[36px] min-h-[36px] shrink-0 opacity-70 hover:opacity-100 touch-manipulation"
                     aria-label={`Delete ${t.name}`}
                     onClick={(e) => {
                       e.preventDefault();
@@ -119,7 +126,7 @@ export function ConfigTemplatePicker({ config, onLoad, disabled }: ConfigTemplat
       </div>
 
       <Dialog open={saveOpen} onOpenChange={setSaveOpen}>
-        <DialogContent>
+        <DialogContent className="w-[calc(100vw-2rem)] max-w-md p-4 sm:p-6">
           <DialogHeader>
             <DialogTitle>Save template</DialogTitle>
             <DialogDescription>Give this configuration a name (e.g. &quot;Q1 campaign&quot;, &quot;Product launch&quot;) so you can load it later.</DialogDescription>
@@ -134,11 +141,11 @@ export function ConfigTemplatePicker({ config, onLoad, disabled }: ConfigTemplat
               onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleSave())}
             />
           </div>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setSaveOpen(false)}>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button type="button" variant="outline" onClick={() => setSaveOpen(false)} className="min-h-[44px] touch-manipulation flex-1 sm:flex-initial">
               Cancel
             </Button>
-            <Button type="button" onClick={handleSave}>
+            <Button type="button" onClick={handleSave} className="min-h-[44px] touch-manipulation flex-1 sm:flex-initial">
               Save
             </Button>
           </DialogFooter>

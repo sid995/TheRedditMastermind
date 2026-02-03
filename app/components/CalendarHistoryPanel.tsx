@@ -49,30 +49,36 @@ export function CalendarHistoryPanel({
   if (entries.length === 0) return null;
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+    <Card className="overflow-hidden">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 px-3 py-3 sm:px-6 sm:py-4 pb-2">
         <CardTitle className="text-base flex items-center gap-2">
-          <History className="size-4" />
+          <History className="size-4 shrink-0" />
           Calendar history
         </CardTitle>
       </CardHeader>
-      <CardContent>
-        <ul className="space-y-1.5 max-h-[200px] overflow-y-auto">
+      <CardContent className="px-3 pb-3 sm:px-6 sm:pb-6">
+        <ul className="space-y-2 max-h-[200px] overflow-y-auto -mr-1 pr-1">
           {entries.map((e) => (
-            <li key={e.id} className="flex items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm">
-              <span className="text-muted-foreground truncate flex-1">{formatWeekLabel(e.weekStart)}</span>
-              <div className="flex items-center gap-1 shrink-0">
-                <Button type="button" variant="ghost" size="sm" onClick={() => onOpen(e.calendar)}>
+            <li key={e.id} className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between rounded-md border px-3 py-2.5 text-sm">
+              <span className="text-muted-foreground truncate min-w-0 flex-1">{formatWeekLabel(e.weekStart)}</span>
+              <div className="flex items-center gap-2 shrink-0 flex-wrap">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onOpen(e.calendar)}
+                  className="min-h-[44px] touch-manipulation"
+                >
                   Open
                 </Button>
                 {(onExportExcel || onExportCsv || onExportJson) && (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button type="button" variant="ghost" size="sm">
+                      <Button type="button" variant="ghost" size="sm" className="min-h-[44px] touch-manipulation">
                         Export
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
+                    <DropdownMenuContent align="end" className="min-w-[160px]">
                       {onExportExcel && (
                         <DropdownMenuItem onSelect={() => onExportExcel(e.calendar)}>Excel</DropdownMenuItem>
                       )}
@@ -89,7 +95,7 @@ export function CalendarHistoryPanel({
                   type="button"
                   variant="ghost"
                   size="icon"
-                  className="size-8"
+                  className="size-8 min-w-[44px] min-h-[44px] touch-manipulation"
                   aria-label="Remove from history"
                   onClick={() => handleDelete(e.id)}
                 >

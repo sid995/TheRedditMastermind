@@ -76,17 +76,17 @@ export function ConfigForm({ config, onChange, onSubmit, disabled, isGenerating 
 
   return (
     <form
-      className="flex flex-col gap-6"
+      className="flex flex-col gap-4 sm:gap-6"
       onSubmit={(e) => {
         e.preventDefault();
         if (valid) onSubmit();
       }}
     >
       <Card>
-        <CardHeader>
-          <CardTitle>Company</CardTitle>
+        <CardHeader className="px-4 pt-4 sm:px-6 sm:pt-6 pb-2">
+          <CardTitle className="text-lg">Company</CardTitle>
         </CardHeader>
-        <CardContent className="flex flex-col gap-4">
+        <CardContent className="flex flex-col gap-4 px-4 pb-4 sm:px-6 sm:pb-6">
           <div className="grid gap-2">
             <Label htmlFor="company-name">Company name</Label>
             <Input
@@ -131,18 +131,18 @@ export function ConfigForm({ config, onChange, onSubmit, disabled, isGenerating 
       </Card>
 
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>People (min 2)</CardTitle>
-          <Button type="button" variant="outline" size="sm" onClick={addPerson}>
+        <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between px-4 pt-4 sm:px-6 sm:pt-6 pb-2">
+          <CardTitle className="text-lg">People (min 2)</CardTitle>
+          <Button type="button" variant="outline" size="sm" onClick={addPerson} className="min-h-[44px] w-full sm:w-auto touch-manipulation">
             <UserPlus className="size-4" />
             Add person
           </Button>
         </CardHeader>
-        <CardContent className="flex flex-col gap-3">
+        <CardContent className="flex flex-col gap-3 px-4 pb-4 sm:px-6 sm:pb-6">
           {people.map((p) => (
             <Card key={p.id}>
-              <CardContent className="pt-4 flex flex-wrap items-center gap-3">
-                <div className="grid gap-2 flex-1 min-w-[140px]">
+              <CardContent className="pt-4 px-4 pb-4 sm:px-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+                <div className="grid gap-2 flex-1 min-w-0">
                   <Label htmlFor={`person-name-${p.id}`}>Name</Label>
                   <Input
                     id={`person-name-${p.id}`}
@@ -150,9 +150,10 @@ export function ConfigForm({ config, onChange, onSubmit, disabled, isGenerating 
                     placeholder="Person name"
                     value={p.name}
                     onChange={(e) => updatePerson(p.id, { name: e.target.value })}
+                    className="min-h-[44px]"
                   />
                 </div>
-                <div className="grid gap-2 flex-1 min-w-[140px]">
+                <div className="grid gap-2 flex-1 min-w-0">
                   <Label htmlFor={`person-desc-${p.id}`}>Description (optional)</Label>
                   <Input
                     id={`person-desc-${p.id}`}
@@ -160,6 +161,7 @@ export function ConfigForm({ config, onChange, onSubmit, disabled, isGenerating 
                     placeholder="Role or bio"
                     value={p.description ?? ""}
                     onChange={(e) => updatePerson(p.id, { description: e.target.value })}
+                    className="min-h-[44px]"
                   />
                 </div>
                 <Button
@@ -168,7 +170,7 @@ export function ConfigForm({ config, onChange, onSubmit, disabled, isGenerating 
                   size="sm"
                   onClick={() => removePerson(p.id)}
                   disabled={people.length <= 2}
-                  className="self-end"
+                  className="min-h-[44px] touch-manipulation w-full sm:w-auto"
                 >
                   Remove
                 </Button>
@@ -178,7 +180,7 @@ export function ConfigForm({ config, onChange, onSubmit, disabled, isGenerating 
         </CardContent>
       </Card>
 
-      <div className="space-y-4">
+      <div className="space-y-4 px-0">
         <div className="grid gap-2">
           <Label htmlFor="subreddits">Subreddits</Label>
           <Textarea
@@ -208,12 +210,13 @@ export function ConfigForm({ config, onChange, onSubmit, disabled, isGenerating 
             max={50}
             value={postsPerWeek}
             onChange={(e) => setPostsPerWeek(Number(e.target.value) || 1)}
+            className="min-h-[44px] text-base"
           />
         </div>
       </div>
 
       <div className="flex flex-col gap-1">
-        <Button type="submit" disabled={!valid || disabled} size="lg">
+        <Button type="submit" disabled={!valid || disabled} size="lg" className="min-h-[48px] w-full sm:w-auto touch-manipulation text-base">
           {isGenerating ? (
             <>
               <Loader2 className="size-4 animate-spin" />

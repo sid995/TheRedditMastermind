@@ -156,4 +156,10 @@
   body {
     @apply bg-background text-foreground;
   }
+  /* Mobile: ensure tap targets and safe area */
+  @media (max-width: 640px) {
+    html {
+      -webkit-tap-highlight-color: transparent;
+    }
+  }
 }

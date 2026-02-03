@@ -261,16 +261,16 @@ function HomeContent() {
   return (
     <div className="min-h-screen bg-background font-sans">
       <main className="flex flex-col">
-        <div className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6 lg:px-8 space-y-8">
-          <header className="space-y-2">
-            <p className="text-lg text-muted-foreground">
+        <div className="mx-auto w-full max-w-4xl px-3 py-6 sm:px-6 sm:py-8 lg:px-8 space-y-6 sm:space-y-8">
+          <header className="space-y-1">
+            <p className="text-base sm:text-lg text-muted-foreground">
               Plan Reddit content and replies in one place
             </p>
           </header>
 
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle>Configuration</CardTitle>
+            <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between space-y-0 pb-2 px-4 sm:px-6 pt-4 sm:pt-6">
+              <CardTitle className="text-lg">Configuration</CardTitle>
               <ConfigTemplatePicker
                 config={config}
                 onLoad={setConfig}
@@ -345,10 +345,10 @@ function HomeContent() {
         </div>
 
         {calendar && !isGenerating && (
-          <section className="w-full px-4 pb-8 sm:px-6 lg:px-8 xl:px-12">
+          <section className="w-full px-3 pb-6 sm:px-6 sm:pb-8 lg:px-8 xl:px-12">
             <div className="mx-auto w-full max-w-[1600px]">
               <Card>
-                <CardContent className="pt-6 space-y-6">
+                <CardContent className="pt-4 px-3 sm:pt-6 sm:px-6 space-y-4 sm:space-y-6">
                   <CalendarWeekView
                     calendar={calendar}
                     people={config.people}
@@ -356,28 +356,29 @@ function HomeContent() {
                     editable
                   />
                   <div className="flex flex-wrap gap-2">
-                    <Button onClick={handleGenerateNextWeek} size="default">
-                      <CalendarPlus className="size-4" />
-                      Generate next week
+                    <Button onClick={handleGenerateNextWeek} size="default" className="min-h-[44px] touch-manipulation shrink-0">
+                      <CalendarPlus className="size-4 shrink-0" />
+                      <span className="hidden sm:inline">Generate next week</span>
+                      <span className="sm:hidden">Next week</span>
                     </Button>
-                    <Button onClick={handleDuplicateWeek} variant="outline" size="default">
+                    <Button onClick={handleDuplicateWeek} variant="outline" size="default" className="min-h-[44px] touch-manipulation">
                       <CopyPlus className="size-4" />
                       Duplicate week
                     </Button>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="outline" size="default">
+                        <Button variant="outline" size="default" className="min-h-[44px] touch-manipulation">
                           <FileDown className="size-4" />
                           Export
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="start">
+                      <DropdownMenuContent align="start" className="max-h-[min(70vh,400px)] overflow-y-auto">
                         <DropdownMenuItem onSelect={() => handleExportExcel()}>Excel</DropdownMenuItem>
                         <DropdownMenuItem onSelect={() => handleExportCsv()}>CSV</DropdownMenuItem>
                         <DropdownMenuItem onSelect={() => handleExportJson()}>JSON</DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
-                    <Button onClick={handleCopySummary} variant="outline" size="default">
+                    <Button onClick={handleCopySummary} variant="outline" size="default" className="min-h-[44px] touch-manipulation">
                       <Copy className="size-4" />
                       Copy summary
                     </Button>

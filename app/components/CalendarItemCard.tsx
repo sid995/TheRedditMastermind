@@ -26,17 +26,17 @@ export function CalendarItemCard({ item, people, getPersonName, editable, onSave
   return (
     <>
       <Card>
-        <CardContent className="py-2.5 sm:py-3 px-3 sm:px-6">
-          <div className="flex items-start justify-between gap-2">
+        <CardContent className="py-2 px-2.5 sm:py-3 sm:px-6">
+          <div className="flex items-start justify-between gap-1.5 sm:gap-2">
             <div className="min-w-0 flex-1">
-              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 text-xs sm:text-sm">
-                <span className="font-medium text-muted-foreground">
+              <div className="flex flex-wrap items-center gap-1 sm:gap-2 text-[11px] sm:text-sm">
+                <span className="font-medium text-muted-foreground truncate max-w-[80px] sm:max-w-none">
                   {item.subreddit}
                 </span>
-                <span className="text-muted-foreground">·</span>
-                <span className="text-foreground">{item.query}</span>
+                <span className="text-muted-foreground shrink-0">·</span>
+                <span className="text-foreground truncate">{item.query}</span>
               </div>
-              <p className="mt-1.5 sm:mt-2 text-xs sm:text-sm text-card-foreground">
+              <p className="mt-1 sm:mt-2 text-[11px] sm:text-sm text-card-foreground">
                 <strong>{authorName}</strong> posts
                 {replyNames.length > 0 && (
                   <>
@@ -58,7 +58,7 @@ export function CalendarItemCard({ item, people, getPersonName, editable, onSave
                 type="button"
                 variant="ghost"
                 size="icon"
-                className="size-8 shrink-0"
+                className="size-9 min-w-[44px] min-h-[44px] shrink-0 touch-manipulation"
                 aria-label="Edit post"
                 onClick={() => setEditOpen(true)}
               >

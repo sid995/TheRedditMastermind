@@ -28,7 +28,7 @@ export function ThemePicker() {
 
   if (!mounted) {
     return (
-      <Button variant="ghost" size="icon" className="size-9" aria-label="Theme">
+      <Button variant="ghost" size="icon" className="size-10 min-w-[44px] min-h-[44px] sm:size-9" aria-label="Theme">
         <Sun className="size-4" />
       </Button>
     );
@@ -40,7 +40,7 @@ export function ThemePicker() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="size-9" aria-label="Choose theme">
+        <Button variant="ghost" size="icon" className="size-10 min-w-[44px] min-h-[44px] sm:size-9" aria-label="Choose theme">
           <Icon className="size-4" />
         </Button>
       </DropdownMenuTrigger>
