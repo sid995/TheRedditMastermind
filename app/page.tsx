@@ -2,15 +2,24 @@
 
 import { useCallback, useEffect, useState } from "react";
 import type { Config, ContentCalendar } from "@/app/types/calendar";
-import { generateCalendar, getNextWeekStart, getWeekStart } from "@/lib/planning-algorithm";
-import { exportCalendarExcel } from "@/lib/excel-io";
+import { generateCalendar, getNextWeekStart, getWeekStart, duplicateCalendarToWeek } from "@/lib/planning-algorithm";
+import { exportCalendarExcel, exportCalendarCsv, exportCalendarJson } from "@/lib/excel-io";
+import { addToCalendarHistory } from "@/lib/calendar-history";
 import { ConfigForm } from "@/app/components/ConfigForm";
+import { ConfigTemplatePicker } from "@/app/components/ConfigTemplatePicker";
 import { CalendarWeekView } from "@/app/components/CalendarWeekView";
+import { CalendarHistoryPanel } from "@/app/components/CalendarHistoryPanel";
 import { getOnboardingDone } from "@/app/components/OnboardingDialog";
 import { useOnboarding } from "@/app/contexts/OnboardingContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CalendarPlus, Copy, FileDown } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { CalendarPlus, Copy, FileDown, CopyPlus } from "lucide-react";
 import { toast } from "sonner";
 
 const DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
@@ -128,6 +137,7 @@ export default function Home() {
       const cal = generateCalendar(config, weekStart);
       setCalendar(cal);
       setCurrentWeekStart(new Date(cal.weekStart));
+      addToCalendarHistory(cal);
       setIsGenerating(false);
       toast.success("Calendar generated");
     }, 0);
@@ -141,23 +151,81 @@ export default function Home() {
       const cal = generateCalendar(config, nextStart);
       setCalendar(cal);
       setCurrentWeekStart(new Date(cal.weekStart));
+      addToCalendarHistory(cal);
       setIsGenerating(false);
       toast.success("Next week generated");
     }, 0);
   }, [config, currentWeekStart]);
 
-  const handleExportExcel = useCallback(() => {
+  const handleDuplicateWeek = useCallback(() => {
     if (!calendar) return;
-    const buf = exportCalendarExcel(config, calendar);
-    const blob = new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `content-calendar-${calendar.weekStart.toISOString().slice(0, 10)}.xlsx`;
-    a.click();
-    URL.revokeObjectURL(url);
-    toast.success("Exported to Excel");
-  }, [config, calendar]);
+    const nextStart = getNextWeekStart(currentWeekStart ?? new Date(calendar.weekStart));
+    const cal = duplicateCalendarToWeek(calendar, nextStart);
+    setCalendar(cal);
+    setCurrentWeekStart(new Date(cal.weekStart));
+    addToCalendarHistory(cal);
+    toast.success("Week duplicated");
+  }, [calendar, currentWeekStart]);
+
+  const handleOpenFromHistory = useCallback((cal: ContentCalendar) => {
+    setCalendar(cal);
+    setCurrentWeekStart(new Date(cal.weekStart));
+  }, []);
+
+  const handleExportExcel = useCallback(
+    (cal?: ContentCalendar) => {
+      const target = cal ?? calendar;
+      if (!target) return;
+      const buf = exportCalendarExcel(config, target);
+      const blob = new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `content-calendar-${target.weekStart.toISOString().slice(0, 10)}.xlsx`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success("Exported to Excel");
+    },
+    [config, calendar]
+  );
+
+  const handleExportCsv = useCallback(
+    (cal?: ContentCalendar) => {
+      const target = cal ?? calendar;
+      if (!target) return;
+      const csv = exportCalendarCsv(config, target);
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `content-calendar-${target.weekStart.toISOString().slice(0, 10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success("Exported to CSV");
+    },
+    [config, calendar]
+  );
+
+  const handleExportJson = useCallback(
+    (cal?: ContentCalendar) => {
+      const target = cal ?? calendar;
+      if (!target) return;
+      const json = exportCalendarJson(config, target);
+      const blob = new Blob([json], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `content-calendar-${target.weekStart.toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success("Exported to JSON");
+    },
+    [config, calendar]
+  );
+
+  const handleCalendarChange = useCallback((updated: ContentCalendar) => {
+    setCalendar(updated);
+  }, []);
 
   const personMap = Object.fromEntries(config.people.map((p) => [p.id, p]));
   const getPersonName = useCallback((id: string) => personMap[id]?.name ?? id, [config.people]);
@@ -196,8 +264,13 @@ export default function Home() {
           </header>
 
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle>Configuration</CardTitle>
+              <ConfigTemplatePicker
+                config={config}
+                onLoad={setConfig}
+                disabled={isGenerating}
+              />
             </CardHeader>
             <CardContent>
               <ConfigForm
@@ -209,6 +282,13 @@ export default function Home() {
               />
             </CardContent>
           </Card>
+
+          <CalendarHistoryPanel
+            onOpen={handleOpenFromHistory}
+            onExportExcel={handleExportExcel}
+            onExportCsv={handleExportCsv}
+            onExportJson={handleExportJson}
+          />
 
           {!calendar && !isGenerating && (
             <Card className="border-dashed">
@@ -264,16 +344,34 @@ export default function Home() {
             <div className="mx-auto w-full max-w-[1600px]">
               <Card>
                 <CardContent className="pt-6 space-y-6">
-                  <CalendarWeekView calendar={calendar} people={config.people} />
+                  <CalendarWeekView
+                    calendar={calendar}
+                    people={config.people}
+                    onCalendarChange={handleCalendarChange}
+                    editable
+                  />
                   <div className="flex flex-wrap gap-2">
                     <Button onClick={handleGenerateNextWeek} size="default">
                       <CalendarPlus className="size-4" />
                       Generate next week
                     </Button>
-                    <Button onClick={handleExportExcel} variant="outline" size="default">
-                      <FileDown className="size-4" />
-                      Export to Excel
+                    <Button onClick={handleDuplicateWeek} variant="outline" size="default">
+                      <CopyPlus className="size-4" />
+                      Duplicate week
                     </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" size="default">
+                          <FileDown className="size-4" />
+                          Export
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start">
+                        <DropdownMenuItem onSelect={() => handleExportExcel()}>Excel</DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => handleExportCsv()}>CSV</DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => handleExportJson()}>JSON</DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                     <Button onClick={handleCopySummary} variant="outline" size="default">
                       <Copy className="size-4" />
                       Copy summary

@@ -143,3 +143,20 @@ export function generateCalendar(config: Config, weekStart: Date): ContentCalend
     items,
   };
 }
+
+/** Copy a calendar to a new week: same structure (days, subreddits, queries, people), new week start and item ids */
+export function duplicateCalendarToWeek(calendar: ContentCalendar, newWeekStart: Date): ContentCalendar {
+  const start = getWeekStart(new Date(newWeekStart));
+  return {
+    weekStart: start,
+    items: calendar.items.map((item, i) => ({
+      ...item,
+      id: `item-${start.getTime()}-${i}`,
+      dayOfWeek: item.dayOfWeek,
+      subreddit: item.subreddit,
+      query: item.query,
+      authorPersonId: item.authorPersonId,
+      replyAssignments: [...item.replyAssignments],
+    })),
+  };
+}
