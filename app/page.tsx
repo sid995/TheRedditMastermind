@@ -24,19 +24,7 @@ import { CalendarPlus, Copy, FileDown, CopyPlus } from "lucide-react";
 import { toast } from "sonner";
 
 const DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-const STORAGE_KEY_CONFIG = "reddit-mastermind-config";
 const STORAGE_KEY_CALENDAR = "reddit-mastermind-calendar";
-
-function loadConfig(): Config | null {
-  if (typeof window === "undefined") return null;
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY_CONFIG);
-    if (!raw) return null;
-    return JSON.parse(raw) as Config;
-  } catch {
-    return null;
-  }
-}
 
 function loadCalendar(): ContentCalendar | null {
   if (typeof window === "undefined") return null;
@@ -103,8 +91,6 @@ function HomeContent() {
 
   useEffect(() => {
     if (!mounted) return;
-    const savedConfig = loadConfig();
-    if (savedConfig) setConfig(savedConfig);
     const savedCalendar = loadCalendar();
     if (savedCalendar) {
       setCalendar(savedCalendar);
@@ -136,15 +122,6 @@ function HomeContent() {
   }, [hydrated, mounted, openOnboarding]);
 
   useEffect(() => {
-    if (!hydrated) return;
-    try {
-      localStorage.setItem(STORAGE_KEY_CONFIG, JSON.stringify(config));
-    } catch {
-      // ignore
-    }
-  }, [config, hydrated]);
-
-  useEffect(() => {
     if (!hydrated || !calendar) return;
     try {
       localStorage.setItem(STORAGE_KEY_CALENDAR, JSON.stringify(calendar));
@@ -161,6 +138,7 @@ function HomeContent() {
       setCalendar(cal);
       setCurrentWeekStart(new Date(cal.weekStart));
       addToCalendarHistory(cal);
+      setConfig(defaultConfig());
       setIsGenerating(false);
       toast.success("Calendar generated");
     }, 0);
