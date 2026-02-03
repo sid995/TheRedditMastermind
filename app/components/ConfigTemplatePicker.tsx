@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { Config } from "@/app/types/calendar";
 import {
   loadConfigTemplates,
@@ -35,9 +35,13 @@ interface ConfigTemplatePickerProps {
 }
 
 export function ConfigTemplatePicker({ config, onLoad, disabled }: ConfigTemplatePickerProps) {
-  const [templates, setTemplates] = useState<ConfigTemplate[]>(() => loadConfigTemplates());
+  const [templates, setTemplates] = useState<ConfigTemplate[]>([]);
   const [saveOpen, setSaveOpen] = useState(false);
   const [templateName, setTemplateName] = useState("");
+
+  useEffect(() => {
+    setTemplates(loadConfigTemplates());
+  }, []);
 
   const refreshTemplates = () => setTemplates(loadConfigTemplates());
 

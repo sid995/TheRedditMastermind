@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { History, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 function formatWeekLabel(weekStart: string): string {
   const d = new Date(weekStart);
@@ -33,7 +33,11 @@ export function CalendarHistoryPanel({
   onExportCsv,
   onExportJson,
 }: CalendarHistoryPanelProps) {
-  const [entries, setEntries] = useState<CalendarHistoryEntry[]>(() => loadCalendarHistory());
+  const [entries, setEntries] = useState<CalendarHistoryEntry[]>([]);
+
+  useEffect(() => {
+    setEntries(loadCalendarHistory());
+  }, []);
 
   const refresh = () => setEntries(loadCalendarHistory());
 

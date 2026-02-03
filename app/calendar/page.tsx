@@ -61,32 +61,46 @@ function getWeekLabel(weekStart: Date): string {
   return `Week of ${mon.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })} – ${sun.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" })}`;
 }
 
+/** Stable initial date so server and client render the same (avoids hydration mismatch) */
+function getStableFirstOfMonth(): Date {
+  const d = new Date(2000, 0, 1);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
 export default function CalendarPage() {
-  const [viewDate, setViewDate] = useState<Date>(() => {
-    const d = new Date();
-    d.setDate(1);
-    d.setHours(0, 0, 0, 0);
-    return d;
-  });
+  const [viewDate, setViewDate] = useState<Date>(getStableFirstOfMonth);
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [allEventsCount, setAllEventsCount] = useState(0);
   const [config, setConfig] = useState<Config | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [viewMode, setViewMode] = useState<"month" | "week">("month");
-  const [weekStart, setWeekStart] = useState<Date>(() => getWeekStart(new Date()));
+  const [weekStart, setWeekStart] = useState<Date>(() => getWeekStart(new Date(2000, 0, 3)));
+  const [today, setToday] = useState<Date>(() => new Date(2000, 0, 1));
 
   const year = viewDate.getFullYear();
   const month = viewDate.getMonth();
 
   useEffect(() => {
     setConfig(loadConfig());
+    const now = new Date();
+    const first = new Date(now.getFullYear(), now.getMonth(), 1);
+    first.setHours(0, 0, 0, 0);
+    setViewDate(first);
+    setWeekStart(getWeekStart(now));
+    const t = new Date(now);
+    t.setHours(0, 0, 0, 0);
+    setToday(t);
+    setEvents(getEventsForMonth(first.getFullYear(), first.getMonth()));
+    setAllEventsCount(getAllEvents().length);
+    setLoaded(true);
   }, []);
 
   useEffect(() => {
+    if (year === 2000 && month === 0) return;
     setEvents(getEventsForMonth(year, month));
     setAllEventsCount(getAllEvents().length);
-    setLoaded(true);
   }, [year, month]);
 
   const goPrevMonth = useCallback(() => {
@@ -136,8 +150,6 @@ export default function CalendarPage() {
   const weekEvents = getEventsForWeek(weekStart);
 
   const startSunday = getFirstSunday(year, month);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
 
   const getPersonName = useCallback(
     (id: string) => config?.people.find((p) => p.id === id)?.name ?? id,

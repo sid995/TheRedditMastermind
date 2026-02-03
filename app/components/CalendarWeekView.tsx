@@ -1,10 +1,19 @@
 "use client";
 
 import type { ContentCalendar, Person, CalendarItem } from "@/app/types/calendar";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CalendarItemCard, getDayName } from "./CalendarItemCard";
+import { Card, CardContent } from "@/components/ui/card";
+import { CalendarItemCard } from "./CalendarItemCard";
+import { DAY_NAMES_SHORT } from "./calendar-constants";
 
 const DAY_ORDER = [0, 1, 2, 3, 4, 5, 6]; // Sun..Sat
+
+/** weekStart is Monday; dayOfWeek 0=Sun, 1=Mon, ... 6=Sat. Return the date for that day. */
+function getDateForDay(weekStart: Date, dayOfWeek: number): Date {
+  const d = new Date(weekStart);
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() + (dayOfWeek === 0 ? -1 : dayOfWeek - 1));
+  return d;
+}
 
 interface CalendarWeekViewProps {
   calendar: ContentCalendar;
@@ -47,30 +56,45 @@ export function CalendarWeekView({ calendar, people, editable, onCalendarChange 
           {formatDate(weekStart)} – {formatDate(weekEnd)}
         </p>
       </header>
-      <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-7">
-        {DAY_ORDER.map((dayOfWeek) => (
-          <Card key={dayOfWeek}>
-            <CardHeader className="py-3 sm:py-4 px-3 sm:px-6">
-              <CardTitle className="text-sm sm:text-base">{getDayName(dayOfWeek)}</CardTitle>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-2 pt-0 px-3 sm:px-6 pb-3 sm:pb-6">
-              {itemsByDay[dayOfWeek]?.length ? (
-                itemsByDay[dayOfWeek].map((item) => (
-                  <CalendarItemCard
-                    key={item.id}
-                    item={item}
-                    people={people}
-                    getPersonName={getPersonName}
-                    editable={editable}
-                    onSave={editable ? handleItemSave : undefined}
-                  />
-                ))
-              ) : (
-                <p className="text-sm text-muted-foreground">No posts</p>
-              )}
-            </CardContent>
-          </Card>
-        ))}
+      <div className="overflow-x-auto rounded-lg border border-border">
+        <div className="min-w-[600px]">
+          <div className="grid grid-cols-7 border-b border-border bg-muted/50">
+            {DAY_ORDER.map((dayOfWeek) => {
+              const dayDate = getDateForDay(weekStart, dayOfWeek);
+              return (
+                <div
+                  key={dayOfWeek}
+                  className="py-2 text-center text-xs font-medium text-muted-foreground border-r border-border last:border-r-0"
+                >
+                  {DAY_NAMES_SHORT[dayOfWeek]} {dayDate.getDate()}
+                </div>
+              );
+            })}
+          </div>
+          <div className="grid grid-cols-7 bg-card min-h-[320px]">
+            {DAY_ORDER.map((dayOfWeek) => (
+              <div
+                key={dayOfWeek}
+                className="flex flex-col gap-2 border-r border-border last:border-r-0 p-2 min-h-0"
+              >
+                {itemsByDay[dayOfWeek]?.length ? (
+                  itemsByDay[dayOfWeek].map((item) => (
+                    <CalendarItemCard
+                      key={item.id}
+                      item={item}
+                      people={people}
+                      getPersonName={getPersonName}
+                      editable={editable}
+                      onSave={editable ? handleItemSave : undefined}
+                    />
+                  ))
+                ) : (
+                  <p className="text-sm text-muted-foreground py-2">No posts</p>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );

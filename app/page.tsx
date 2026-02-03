@@ -89,6 +89,7 @@ function defaultConfig(): Config {
 
 function HomeContent() {
   const searchParams = useSearchParams();
+  const [mounted, setMounted] = useState(false);
   const [config, setConfig] = useState<Config>(defaultConfig);
   const [calendar, setCalendar] = useState<ContentCalendar | null>(null);
   const [currentWeekStart, setCurrentWeekStart] = useState<Date | null>(null);
@@ -97,6 +98,11 @@ function HomeContent() {
   const { openOnboarding } = useOnboarding();
 
   useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
     const savedConfig = loadConfig();
     if (savedConfig) setConfig(savedConfig);
     const savedCalendar = loadCalendar();
@@ -105,10 +111,10 @@ function HomeContent() {
       setCurrentWeekStart(new Date(savedCalendar.weekStart));
     }
     setHydrated(true);
-  }, []);
+  }, [mounted]);
 
   useEffect(() => {
-    if (!hydrated) return;
+    if (!hydrated || !mounted) return;
     const weekParam = searchParams.get("week");
     if (!weekParam || !/^\d{4}-\d{2}-\d{2}$/.test(weekParam)) return;
     const history = loadCalendarHistory();
@@ -120,14 +126,14 @@ function HomeContent() {
         window.history.replaceState(null, "", window.location.pathname);
       }
     }
-  }, [hydrated, searchParams]);
+  }, [hydrated, mounted, searchParams]);
 
   useEffect(() => {
-    if (!hydrated) return;
+    if (!hydrated || !mounted) return;
     if (!loadCalendar() && !getOnboardingDone()) {
       openOnboarding();
     }
-  }, [hydrated, openOnboarding]);
+  }, [hydrated, mounted, openOnboarding]);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -269,6 +275,10 @@ function HomeContent() {
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
+
+  if (!mounted) {
+    return <HomeFallback />;
+  }
 
   return (
     <div className="min-h-screen bg-background font-sans">
