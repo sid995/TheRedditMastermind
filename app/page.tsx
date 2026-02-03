@@ -1,11 +1,66 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { Config, ContentCalendar } from "@/app/types/calendar";
 import { generateCalendar, getNextWeekStart, getWeekStart } from "@/lib/planning-algorithm";
 import { exportCalendarExcel } from "@/lib/excel-io";
 import { ConfigForm } from "@/app/components/ConfigForm";
 import { CalendarWeekView } from "@/app/components/CalendarWeekView";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CalendarPlus, Copy, FileDown } from "lucide-react";
+import { toast } from "sonner";
+
+const DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+const STORAGE_KEY_CONFIG = "reddit-mastermind-config";
+const STORAGE_KEY_CALENDAR = "reddit-mastermind-calendar";
+
+function loadConfig(): Config | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_CONFIG);
+    if (!raw) return null;
+    return JSON.parse(raw) as Config;
+  } catch {
+    return null;
+  }
+}
+
+function loadCalendar(): ContentCalendar | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_CALENDAR);
+    if (!raw) return null;
+    const data = JSON.parse(raw) as ContentCalendar;
+    data.weekStart = new Date(data.weekStart);
+    return data;
+  } catch {
+    return null;
+  }
+}
+
+function buildCalendarSummary(calendar: ContentCalendar, getPersonName: (id: string) => string): string {
+  const weekStart = new Date(calendar.weekStart);
+  const weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekEnd.getDate() + 6);
+  const fmt = (d: Date) => d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  const lines: string[] = [`Content calendar: ${fmt(weekStart)} – ${fmt(weekEnd)}`, ""];
+  for (let d = 0; d <= 6; d++) {
+    const dayItems = calendar.items.filter((i) => i.dayOfWeek === d);
+    if (dayItems.length === 0) continue;
+    lines.push(DAY_NAMES[d]);
+    for (const item of dayItems) {
+      const author = getPersonName(item.authorPersonId);
+      const replies = item.replyAssignments
+        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+        .map((r) => getPersonName(r.personId));
+      const replyStr = replies.length > 0 ? ` (Replies: ${replies.join(", ")})` : "";
+      lines.push(`  - r/${item.subreddit}: ${item.query} — ${author} posts${replyStr}`);
+    }
+    lines.push("");
+  }
+  return lines.join("\n");
+}
 
 function defaultConfig(): Config {
   return {
@@ -14,8 +69,8 @@ function defaultConfig(): Config {
       { id: "person-1", name: "", description: "" },
       { id: "person-2", name: "", description: "" },
     ],
-    subreddits: [],
-    queries: [],
+    subreddits: "",
+    queries: "",
     postsPerWeek: 5,
   };
 }
@@ -24,12 +79,43 @@ export default function Home() {
   const [config, setConfig] = useState<Config>(defaultConfig);
   const [calendar, setCalendar] = useState<ContentCalendar | null>(null);
   const [currentWeekStart, setCurrentWeekStart] = useState<Date | null>(null);
+  const [hydrated, setHydrated] = useState(false);
+
+  useEffect(() => {
+    const savedConfig = loadConfig();
+    if (savedConfig) setConfig(savedConfig);
+    const savedCalendar = loadCalendar();
+    if (savedCalendar) {
+      setCalendar(savedCalendar);
+      setCurrentWeekStart(new Date(savedCalendar.weekStart));
+    }
+    setHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    try {
+      localStorage.setItem(STORAGE_KEY_CONFIG, JSON.stringify(config));
+    } catch {
+      // ignore
+    }
+  }, [config, hydrated]);
+
+  useEffect(() => {
+    if (!hydrated || !calendar) return;
+    try {
+      localStorage.setItem(STORAGE_KEY_CALENDAR, JSON.stringify(calendar));
+    } catch {
+      // ignore
+    }
+  }, [calendar, hydrated]);
 
   const handleGenerateCalendar = useCallback(() => {
     const weekStart = getWeekStart(new Date());
     const cal = generateCalendar(config, weekStart);
     setCalendar(cal);
     setCurrentWeekStart(new Date(cal.weekStart));
+    toast.success("Calendar generated");
   }, [config]);
 
   const handleGenerateNextWeek = useCallback(() => {
@@ -38,6 +124,7 @@ export default function Home() {
     const cal = generateCalendar(config, nextStart);
     setCalendar(cal);
     setCurrentWeekStart(new Date(cal.weekStart));
+    toast.success("Next week generated");
   }, [config, currentWeekStart]);
 
   const handleExportExcel = useCallback(() => {
@@ -50,43 +137,88 @@ export default function Home() {
     a.download = `content-calendar-${calendar.weekStart.toISOString().slice(0, 10)}.xlsx`;
     a.click();
     URL.revokeObjectURL(url);
+    toast.success("Exported to Excel");
   }, [config, calendar]);
 
+  const personMap = Object.fromEntries(config.people.map((p) => [p.id, p]));
+  const getPersonName = useCallback((id: string) => personMap[id]?.name ?? id, [config.people]);
+
+  const handleCopySummary = useCallback(() => {
+    if (!calendar) return;
+    const text = buildCalendarSummary(calendar, getPersonName);
+    void navigator.clipboard.writeText(text).then(() => {
+      toast.success("Summary copied to clipboard");
+    });
+  }, [calendar, getPersonName]);
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.key === "Enter") {
+        const target = e.target as HTMLElement;
+        if (target.closest("form")) {
+          e.preventDefault();
+          const form = target.closest("form");
+          if (form?.requestSubmit) form.requestSubmit();
+        }
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
+
   return (
-    <div className="min-h-screen bg-zinc-50 font-sans dark:bg-zinc-950">
-      <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
-        <h1 className="mb-8 text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100">
-          Reddit Mastermind – Content Calendar
-        </h1>
+    <div className="min-h-screen bg-background font-sans">
+      <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8 space-y-8">
+        <header className="space-y-2">
+          <p className="text-lg text-muted-foreground">
+            Plan Reddit content and replies in one place
+          </p>
+        </header>
 
-        <section className="mb-10">
-          <ConfigForm
-            config={config}
-            onChange={setConfig}
-            onSubmit={handleGenerateCalendar}
-          />
-        </section>
+        <Card>
+          <CardHeader>
+            <CardTitle>Configuration</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ConfigForm
+              config={config}
+              onChange={setConfig}
+              onSubmit={handleGenerateCalendar}
+            />
+          </CardContent>
+        </Card>
 
-        {calendar && (
-          <section className="space-y-4">
-            <CalendarWeekView calendar={calendar} people={config.people} />
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={handleGenerateNextWeek}
-                className="rounded bg-zinc-700 px-4 py-2 font-medium text-white hover:bg-zinc-600 dark:bg-zinc-300 dark:text-zinc-900 dark:hover:bg-zinc-200"
-              >
-                Generate next week
-              </button>
-              <button
-                type="button"
-                onClick={handleExportExcel}
-                className="rounded border border-zinc-300 bg-white px-4 py-2 font-medium text-zinc-700 hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700"
-              >
-                Export to Excel
-              </button>
-            </div>
-          </section>
+        {calendar ? (
+          <Card>
+            <CardContent className="pt-6 space-y-6">
+              <CalendarWeekView calendar={calendar} people={config.people} />
+              <div className="flex flex-wrap gap-2">
+                <Button onClick={handleGenerateNextWeek} size="default">
+                  <CalendarPlus className="size-4" />
+                  Generate next week
+                </Button>
+                <Button onClick={handleExportExcel} variant="outline" size="default">
+                  <FileDown className="size-4" />
+                  Export to Excel
+                </Button>
+                <Button onClick={handleCopySummary} variant="outline" size="default">
+                  <Copy className="size-4" />
+                  Copy summary
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card className="border-dashed">
+            <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+              <p className="text-muted-foreground mb-4">
+                No calendar yet. Fill in the configuration above and generate your first calendar.
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Add company info, people, subreddits, and ChatGPT queries, then click &quot;Generate calendar&quot;.
+              </p>
+            </CardContent>
+          </Card>
         )}
       </main>
     </div>

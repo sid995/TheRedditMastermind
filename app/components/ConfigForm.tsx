@@ -1,6 +1,12 @@
 "use client";
 
 import type { Config, CompanyInfo, Person } from "@/app/types/calendar";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { UserPlus } from "lucide-react";
 
 function defaultPerson(id: string): Person {
   return { id, name: "", description: "" };
@@ -11,10 +17,6 @@ function parseList(text: string): string[] {
     .split(/[\n,]+/)
     .map((s) => s.trim())
     .filter(Boolean);
-}
-
-function formatList(arr: string[]): string {
-  return arr.join(", ");
 }
 
 interface ConfigFormProps {
@@ -52,11 +54,11 @@ export function ConfigForm({ config, onChange, onSubmit, disabled }: ConfigFormP
   };
 
   const setSubreddits = (text: string) => {
-    onChange({ ...config, subreddits: parseList(text) });
+    onChange({ ...config, subreddits: text });
   };
 
   const setQueries = (text: string) => {
-    onChange({ ...config, queries: parseList(text) });
+    onChange({ ...config, queries: text });
   };
 
   const setPostsPerWeek = (n: number) => {
@@ -67,8 +69,8 @@ export function ConfigForm({ config, onChange, onSubmit, disabled }: ConfigFormP
     company.name.trim() &&
     people.length >= 2 &&
     people.every((p) => p.name.trim()) &&
-    subreddits.length >= 1 &&
-    queries.length >= 1 &&
+    parseList(subreddits).length >= 1 &&
+    parseList(queries).length >= 1 &&
     postsPerWeek >= 1;
 
   return (
@@ -79,133 +81,139 @@ export function ConfigForm({ config, onChange, onSubmit, disabled }: ConfigFormP
         if (valid) onSubmit();
       }}
     >
-      <div className="flex flex-col gap-2">
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
-          Company
-        </h2>
-        <input
-          type="text"
-          placeholder="Company name"
-          value={company.name}
-          onChange={(e) => setCompany({ name: e.target.value })}
-          className="rounded border border-zinc-300 bg-white px-3 py-2 text-zinc-900 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100"
-        />
-        <input
-          type="text"
-          placeholder="Website (optional)"
-          value={company.website ?? ""}
-          onChange={(e) => setCompany({ website: e.target.value })}
-          className="rounded border border-zinc-300 bg-white px-3 py-2 text-zinc-900 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100"
-        />
-        <input
-          type="text"
-          placeholder="Description (optional)"
-          value={company.description ?? ""}
-          onChange={(e) => setCompany({ description: e.target.value })}
-          className="rounded border border-zinc-300 bg-white px-3 py-2 text-zinc-900 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100"
-        />
-        <input
-          type="text"
-          placeholder="Goal (optional)"
-          value={company.goal ?? ""}
-          onChange={(e) => setCompany({ goal: e.target.value })}
-          className="rounded border border-zinc-300 bg-white px-3 py-2 text-zinc-900 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100"
-        />
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Company</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4">
+          <div className="grid gap-2">
+            <Label htmlFor="company-name">Company name</Label>
+            <Input
+              id="company-name"
+              type="text"
+              placeholder="Company name"
+              value={company.name}
+              onChange={(e) => setCompany({ name: e.target.value })}
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="company-website">Website (optional)</Label>
+            <Input
+              id="company-website"
+              type="text"
+              placeholder="https://..."
+              value={company.website ?? ""}
+              onChange={(e) => setCompany({ website: e.target.value })}
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="company-description">Description (optional)</Label>
+            <Input
+              id="company-description"
+              type="text"
+              placeholder="Short description"
+              value={company.description ?? ""}
+              onChange={(e) => setCompany({ description: e.target.value })}
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="company-goal">Goal (optional)</Label>
+            <Input
+              id="company-goal"
+              type="text"
+              placeholder="Business goal"
+              value={company.goal ?? ""}
+              onChange={(e) => setCompany({ goal: e.target.value })}
+            />
+          </div>
+        </CardContent>
+      </Card>
 
-      <div className="flex flex-col gap-2">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
-            People (min 2)
-          </h2>
-          <button
-            type="button"
-            onClick={addPerson}
-            className="rounded bg-zinc-200 px-3 py-1 text-sm font-medium text-zinc-800 hover:bg-zinc-300 dark:bg-zinc-600 dark:text-zinc-100 dark:hover:bg-zinc-500"
-          >
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle>People (min 2)</CardTitle>
+          <Button type="button" variant="outline" size="sm" onClick={addPerson}>
+            <UserPlus className="size-4" />
             Add person
-          </button>
-        </div>
-        <ul className="flex flex-col gap-2">
+          </Button>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-3">
           {people.map((p) => (
-            <li
-              key={p.id}
-              className="flex flex-wrap items-center gap-2 rounded border border-zinc-200 bg-zinc-50 p-2 dark:border-zinc-600 dark:bg-zinc-800/50"
-            >
-              <input
-                type="text"
-                placeholder="Person name"
-                value={p.name}
-                onChange={(e) => updatePerson(p.id, { name: e.target.value })}
-                className="flex-1 min-w-[120px] rounded border border-zinc-300 bg-white px-3 py-1.5 text-zinc-900 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100"
-              />
-              <input
-                type="text"
-                placeholder="Description (optional)"
-                value={p.description ?? ""}
-                onChange={(e) => updatePerson(p.id, { description: e.target.value })}
-                className="flex-1 min-w-[120px] rounded border border-zinc-300 bg-white px-3 py-1.5 text-sm text-zinc-900 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100"
-              />
-              <button
-                type="button"
-                onClick={() => removePerson(p.id)}
-                disabled={people.length <= 2}
-                className="rounded px-2 py-1 text-sm text-red-600 hover:bg-red-50 disabled:opacity-40 dark:text-red-400 dark:hover:bg-red-900/20"
-              >
-                Remove
-              </button>
-            </li>
+            <Card key={p.id}>
+              <CardContent className="pt-4 flex flex-wrap items-center gap-3">
+                <div className="grid gap-2 flex-1 min-w-[140px]">
+                  <Label htmlFor={`person-name-${p.id}`}>Name</Label>
+                  <Input
+                    id={`person-name-${p.id}`}
+                    type="text"
+                    placeholder="Person name"
+                    value={p.name}
+                    onChange={(e) => updatePerson(p.id, { name: e.target.value })}
+                  />
+                </div>
+                <div className="grid gap-2 flex-1 min-w-[140px]">
+                  <Label htmlFor={`person-desc-${p.id}`}>Description (optional)</Label>
+                  <Input
+                    id={`person-desc-${p.id}`}
+                    type="text"
+                    placeholder="Role or bio"
+                    value={p.description ?? ""}
+                    onChange={(e) => updatePerson(p.id, { description: e.target.value })}
+                  />
+                </div>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => removePerson(p.id)}
+                  disabled={people.length <= 2}
+                  className="self-end"
+                >
+                  Remove
+                </Button>
+              </CardContent>
+            </Card>
           ))}
-        </ul>
+        </CardContent>
+      </Card>
+
+      <div className="space-y-4">
+        <div className="grid gap-2">
+          <Label htmlFor="subreddits">Subreddits</Label>
+          <Textarea
+            id="subreddits"
+            placeholder="One per line or comma-separated (e.g. r/startups, r/SaaS)"
+            value={subreddits}
+            onChange={(e) => setSubreddits(e.target.value)}
+            rows={3}
+          />
+        </div>
+        <div className="grid gap-2">
+          <Label htmlFor="queries">ChatGPT queries to target</Label>
+          <Textarea
+            id="queries"
+            placeholder="One per line or comma-separated (e.g. best presentation tools, slide design)"
+            value={queries}
+            onChange={(e) => setQueries(e.target.value)}
+            rows={3}
+          />
+        </div>
+        <div className="grid gap-2 max-w-[8rem]">
+          <Label htmlFor="posts-per-week">Posts per week</Label>
+          <Input
+            id="posts-per-week"
+            type="number"
+            min={1}
+            max={50}
+            value={postsPerWeek}
+            onChange={(e) => setPostsPerWeek(Number(e.target.value) || 1)}
+          />
+        </div>
       </div>
 
-      <div className="flex flex-col gap-2">
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
-          Subreddits
-        </h2>
-        <textarea
-          placeholder="One per line or comma-separated (e.g. r/startups, r/SaaS)"
-          value={formatList(subreddits)}
-          onChange={(e) => setSubreddits(e.target.value)}
-          rows={3}
-          className="rounded border border-zinc-300 bg-white px-3 py-2 text-zinc-900 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100"
-        />
-      </div>
-
-      <div className="flex flex-col gap-2">
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
-          ChatGPT queries to target
-        </h2>
-        <textarea
-          placeholder="One per line or comma-separated (e.g. best presentation tools, slide design)"
-          value={formatList(queries)}
-          onChange={(e) => setQueries(e.target.value)}
-          rows={3}
-          className="rounded border border-zinc-300 bg-white px-3 py-2 text-zinc-900 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100"
-        />
-      </div>
-
-      <div className="flex flex-col gap-2">
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
-          Posts per week
-        </h2>
-        <input
-          type="number"
-          min={1}
-          max={50}
-          value={postsPerWeek}
-          onChange={(e) => setPostsPerWeek(Number(e.target.value) || 1)}
-          className="w-24 rounded border border-zinc-300 bg-white px-3 py-2 text-zinc-900 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100"
-        />
-      </div>
-
-      <button
-        type="submit"
-        disabled={!valid || disabled}
-        className="rounded bg-zinc-900 px-4 py-2 font-medium text-white hover:bg-zinc-800 disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
-      >
+      <Button type="submit" disabled={!valid || disabled} size="lg">
         Generate calendar
-      </button>
+      </Button>
     </form>
   );
 }

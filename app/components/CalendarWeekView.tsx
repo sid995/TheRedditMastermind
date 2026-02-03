@@ -1,6 +1,7 @@
 "use client";
 
 import type { ContentCalendar, Person } from "@/app/types/calendar";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CalendarItemCard, getDayName } from "./CalendarItemCard";
 
 const DAY_ORDER = [0, 1, 2, 3, 4, 5, 6]; // Sun..Sat
@@ -28,36 +29,29 @@ export function CalendarWeekView({ calendar, people }: CalendarWeekViewProps) {
   return (
     <div className="flex flex-col gap-6">
       <header className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">
+        <h2 className="text-xl font-semibold text-foreground">
           Content calendar
         </h2>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">
+        <p className="text-sm text-muted-foreground">
           {formatDate(weekStart)} – {formatDate(weekEnd)}
         </p>
       </header>
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {DAY_ORDER.map((dayOfWeek) => (
-          <section
-            key={dayOfWeek}
-            className="flex flex-col gap-2 rounded-lg border border-zinc-200 bg-zinc-50/50 p-3 dark:border-zinc-600 dark:bg-zinc-800/30"
-          >
-            <h3 className="font-medium text-zinc-700 dark:text-zinc-300">
-              {getDayName(dayOfWeek)}
-            </h3>
-            <ul className="flex flex-col gap-2">
+          <Card key={dayOfWeek}>
+            <CardHeader className="py-4">
+              <CardTitle className="text-base">{getDayName(dayOfWeek)}</CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-2 pt-0">
               {itemsByDay[dayOfWeek]?.length ? (
                 itemsByDay[dayOfWeek].map((item) => (
-                  <li key={item.id}>
-                    <CalendarItemCard item={item} getPersonName={getPersonName} />
-                  </li>
+                  <CalendarItemCard key={item.id} item={item} getPersonName={getPersonName} />
                 ))
               ) : (
-                <li className="text-sm text-zinc-400 dark:text-zinc-500">
-                  No posts
-                </li>
+                <p className="text-sm text-muted-foreground">No posts</p>
               )}
-            </ul>
-          </section>
+            </CardContent>
+          </Card>
         ))}
       </div>
     </div>

@@ -32,12 +32,22 @@ export function getNextWeekStart(weekStart: Date): Date {
   return next;
 }
 
+function parseList(text: string): string[] {
+  return text
+    .split(/[\n,]+/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
 /** Generate a content calendar for the given week */
 export function generateCalendar(config: Config, weekStart: Date): ContentCalendar {
   const seed = getWeekStart(new Date(weekStart)).getTime();
   const rng = seededRandom(seed);
 
-  const { company, people, subreddits, queries, postsPerWeek } = config;
+  const { company, people, postsPerWeek } = config;
+  const subreddits = parseList(config.subreddits);
+  const queries = parseList(config.queries);
+
   if (people.length < 2) throw new Error("At least 2 people required");
   if (subreddits.length === 0) throw new Error("At least 1 subreddit required");
   if (queries.length === 0) throw new Error("At least 1 query required");

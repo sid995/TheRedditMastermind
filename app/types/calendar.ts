@@ -14,8 +14,10 @@ export interface Person {
 export interface Config {
   company: CompanyInfo;
   people: Person[];
-  subreddits: string[];
-  queries: string[];
+  /** Raw text: newline- or comma-separated subreddits */
+  subreddits: string;
+  /** Raw text: newline- or comma-separated ChatGPT queries */
+  queries: string;
   postsPerWeek: number;
 }
 

@@ -3,6 +3,13 @@ import type { Config, ContentCalendar } from "@/app/types/calendar";
 
 const DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
+function parseList(text: string): string[] {
+  return text
+    .split(/[\n,]+/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
 /** Export config + content calendar to SlideForge-style output Excel */
 export function exportCalendarExcel(config: Config, calendar: ContentCalendar): ArrayBuffer {
   const { company, people, subreddits, queries } = config;
@@ -11,7 +18,7 @@ export function exportCalendarExcel(config: Config, calendar: ContentCalendar): 
   rows.push(["Name", company.name]);
   rows.push(["Website", company.website ?? ""]);
   rows.push(["Description", company.description ?? ""]);
-  rows.push(["Subreddits", subreddits.join("\n\n")]);
+  rows.push(["Subreddits", subreddits]);
   rows.push(["Number of posts per week", calendar.items.length]);
   rows.push([""]);
   rows.push([""]);
@@ -24,7 +31,7 @@ export function exportCalendarExcel(config: Config, calendar: ContentCalendar): 
   rows.push([""]);
 
   rows.push(["keyword_id", "keyword"]);
-  queries.forEach((q, idx) => {
+  parseList(queries).forEach((q, idx) => {
     rows.push([`K${idx + 1}`, q]);
   });
   rows.push([""]);
