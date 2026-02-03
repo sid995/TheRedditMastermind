@@ -44,7 +44,7 @@ export function exportCalendarExcel(config: Config, calendar: ContentCalendar): 
     const dayName = DAY_NAMES[item.dayOfWeek] ?? "";
     rows.push([
       `P${idx + 1}`,
-      item.subreddit.startsWith("r/") ? item.subreddit : `r/${item.subreddit}`,
+      item.subreddit,
       item.query,
       "",
       authorName,

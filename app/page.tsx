@@ -55,7 +55,7 @@ function buildCalendarSummary(calendar: ContentCalendar, getPersonName: (id: str
         .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
         .map((r) => getPersonName(r.personId));
       const replyStr = replies.length > 0 ? ` (Replies: ${replies.join(", ")})` : "";
-      lines.push(`  - r/${item.subreddit}: ${item.query} — ${author} posts${replyStr}`);
+      lines.push(`  - ${item.subreddit}: ${item.query} — ${author} posts${replyStr}`);
     }
     lines.push("");
   }
@@ -168,57 +168,65 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-background font-sans">
-      <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8 space-y-8">
-        <header className="space-y-2">
-          <p className="text-lg text-muted-foreground">
-            Plan Reddit content and replies in one place
-          </p>
-        </header>
+      <main className="flex flex-col">
+        <div className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6 lg:px-8 space-y-8">
+          <header className="space-y-2">
+            <p className="text-lg text-muted-foreground">
+              Plan Reddit content and replies in one place
+            </p>
+          </header>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Configuration</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ConfigForm
-              config={config}
-              onChange={setConfig}
-              onSubmit={handleGenerateCalendar}
-            />
-          </CardContent>
-        </Card>
-
-        {calendar ? (
           <Card>
-            <CardContent className="pt-6 space-y-6">
-              <CalendarWeekView calendar={calendar} people={config.people} />
-              <div className="flex flex-wrap gap-2">
-                <Button onClick={handleGenerateNextWeek} size="default">
-                  <CalendarPlus className="size-4" />
-                  Generate next week
-                </Button>
-                <Button onClick={handleExportExcel} variant="outline" size="default">
-                  <FileDown className="size-4" />
-                  Export to Excel
-                </Button>
-                <Button onClick={handleCopySummary} variant="outline" size="default">
-                  <Copy className="size-4" />
-                  Copy summary
-                </Button>
-              </div>
+            <CardHeader>
+              <CardTitle>Configuration</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ConfigForm
+                config={config}
+                onChange={setConfig}
+                onSubmit={handleGenerateCalendar}
+              />
             </CardContent>
           </Card>
-        ) : (
-          <Card className="border-dashed">
-            <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-              <p className="text-muted-foreground mb-4">
-                No calendar yet. Fill in the configuration above and generate your first calendar.
-              </p>
-              <p className="text-sm text-muted-foreground">
-                Add company info, people, subreddits, and ChatGPT queries, then click &quot;Generate calendar&quot;.
-              </p>
-            </CardContent>
-          </Card>
+
+          {!calendar && (
+            <Card className="border-dashed">
+              <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+                <p className="text-muted-foreground mb-4">
+                  No calendar yet. Fill in the configuration above and generate your first calendar.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Add company info, people, subreddits, and ChatGPT queries, then click &quot;Generate calendar&quot;.
+                </p>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+
+        {calendar && (
+          <section className="w-full px-4 pb-8 sm:px-6 lg:px-8 xl:px-12">
+            <div className="mx-auto w-full max-w-[1600px]">
+              <Card>
+                <CardContent className="pt-6 space-y-6">
+                  <CalendarWeekView calendar={calendar} people={config.people} />
+                  <div className="flex flex-wrap gap-2">
+                    <Button onClick={handleGenerateNextWeek} size="default">
+                      <CalendarPlus className="size-4" />
+                      Generate next week
+                    </Button>
+                    <Button onClick={handleExportExcel} variant="outline" size="default">
+                      <FileDown className="size-4" />
+                      Export to Excel
+                    </Button>
+                    <Button onClick={handleCopySummary} variant="outline" size="default">
+                      <Copy className="size-4" />
+                      Copy summary
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </section>
         )}
       </main>
     </div>

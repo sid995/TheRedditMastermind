@@ -21,7 +21,7 @@ export function CalendarItemCard({ item, getPersonName }: CalendarItemCardProps)
       <CardContent className="py-3">
         <div className="flex flex-wrap items-center gap-2 text-sm">
           <span className="font-medium text-muted-foreground">
-            r/{item.subreddit}
+            {item.subreddit}
           </span>
           <span className="text-muted-foreground">·</span>
           <span className="text-foreground">{item.query}</span>
