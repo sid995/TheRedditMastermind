@@ -22,6 +22,7 @@ interface CalendarItemEditDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSave: (updated: CalendarItem) => void;
+  onDelete?: () => void;
 }
 
 export function CalendarItemEditDialog({
@@ -30,6 +31,7 @@ export function CalendarItemEditDialog({
   open,
   onOpenChange,
   onSave,
+  onDelete,
 }: CalendarItemEditDialogProps) {
   const reply1 = item.replyAssignments.find((r) => r.order === 1);
   const reply2 = item.replyAssignments.find((r) => r.order === 2);
@@ -101,40 +103,53 @@ export function CalendarItemEditDialog({
             <select id="edit-author" name="author" defaultValue={item.authorPersonId} className={selectClassName}>
               {people.map((p) => (
                 <option key={p.id} value={p.id}>
-                  {p.name}
+                  {p.name?.trim() || p.id || "Unnamed"}
                 </option>
               ))}
             </select>
           </div>
           <div className="grid gap-2">
             <Label>Replies</Label>
+            <p className="text-xs text-muted-foreground">Choose who replies to this post (1–2 people, different from the author).</p>
             <div className="flex gap-2">
               <select name="reply1" defaultValue={reply1?.personId ?? ""} className={selectClassName}>
                 <option value="">None</option>
                 {replyOptions.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
+                  <option key={p.id} value={p.id} disabled={p.id === item.authorPersonId}>
+                    {p.name?.trim() || p.id || "Unnamed"}
                   </option>
                 ))}
               </select>
               <select name="reply2" defaultValue={reply2?.personId ?? ""} className={selectClassName}>
                 <option value="">None</option>
                 {replyOptions.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
+                  <option key={p.id} value={p.id} disabled={p.id === item.authorPersonId}>
+                    {p.name?.trim() || p.id || "Unnamed"}
                   </option>
                 ))}
               </select>
             </div>
           </div>
         </form>
-        <DialogFooter>
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button type="submit" form="edit-item-form">
-            Save
-          </Button>
+        <DialogFooter className="flex-col gap-2 sm:flex-row sm:justify-between">
+          {onDelete ? (
+            <Button
+              type="button"
+              variant="destructive"
+              className="order-2 sm:order-1 w-full sm:w-auto min-h-[44px] touch-manipulation"
+              onClick={() => { onDelete(); onOpenChange(false); }}
+            >
+              Delete post
+            </Button>
+          ) : null}
+          <div className="flex gap-2 w-full sm:w-auto justify-end order-1 sm:order-2">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="min-h-[44px] touch-manipulation">
+              Cancel
+            </Button>
+            <Button type="submit" form="edit-item-form" className="min-h-[44px] touch-manipulation">
+              Save
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

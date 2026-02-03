@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import type { Config, ContentCalendar } from "@/app/types/calendar";
 import { generateCalendar, getNextWeekStart, getWeekStart, duplicateCalendarToWeek } from "@/lib/planning-algorithm";
@@ -138,7 +138,6 @@ function HomeContent() {
       setCalendar(cal);
       setCurrentWeekStart(new Date(cal.weekStart));
       addToCalendarHistory(cal);
-      setConfig(defaultConfig());
       setIsGenerating(false);
       toast.success("Calendar generated");
     }, 0);
@@ -228,8 +227,20 @@ function HomeContent() {
     setCalendar(updated);
   }, []);
 
-  const personMap = Object.fromEntries(config.people.map((p) => [p.id, p]));
-  const getPersonName = useCallback((id: string) => personMap[id]?.name ?? id, [config.people]);
+  // People for calendar display: config.people + any IDs referenced in calendar (e.g. from history) so author/reply dropdowns always have options
+  const displayPeople = useMemo(() => {
+    const fromConfig = config.people;
+    if (!calendar) return fromConfig;
+    const idsInCalendar = new Set<string>();
+    for (const item of calendar.items) {
+      idsInCalendar.add(item.authorPersonId);
+      for (const r of item.replyAssignments) idsInCalendar.add(r.personId);
+    }
+    const fromCalendar = [...idsInCalendar].filter((id) => !fromConfig.some((p) => p.id === id)).map((id) => ({ id, name: id }));
+    return [...fromConfig, ...fromCalendar];
+  }, [config.people, calendar?.items]);
+  const personMap = useMemo(() => Object.fromEntries(displayPeople.map((p) => [p.id, p])), [displayPeople]);
+  const getPersonName = useCallback((id: string) => personMap[id]?.name ?? id, [personMap]);
 
   const handleCopySummary = useCallback(() => {
     if (!calendar) return;
@@ -351,7 +362,7 @@ function HomeContent() {
                 <CardContent className="pt-4 px-3 sm:pt-6 sm:px-6 space-y-4 sm:space-y-6">
                   <CalendarWeekView
                     calendar={calendar}
-                    people={config.people}
+                    people={displayPeople}
                     onCalendarChange={handleCalendarChange}
                     editable
                   />

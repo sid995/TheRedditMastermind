@@ -141,7 +141,7 @@ export function ConfigForm({ config, onChange, onSubmit, disabled, isGenerating 
         <CardContent className="flex flex-col gap-3 px-4 pb-4 sm:px-6 sm:pb-6">
           {people.map((p) => (
             <Card key={p.id}>
-              <CardContent className="pt-4 px-4 pb-4 sm:px-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+              <CardContent className="pt-4 px-4 pb-4 sm:px-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
                 <div className="grid gap-2 flex-1 min-w-0">
                   <Label htmlFor={`person-name-${p.id}`}>Name</Label>
                   <Input

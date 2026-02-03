@@ -46,6 +46,15 @@ export function CalendarWeekView({ calendar, people, editable, onCalendarChange 
     });
   };
 
+  const handleItemDelete = (item: CalendarItem) => {
+    if (!onCalendarChange) return;
+    const items = calendar.items.filter((i) => i.id !== item.id);
+    onCalendarChange({
+      ...calendar,
+      items,
+    });
+  };
+
   return (
     <div className="flex flex-col gap-4 sm:gap-6">
       <header className="flex flex-col gap-1 sm:flex-row sm:flex-wrap sm:items-baseline sm:justify-between">
@@ -86,6 +95,7 @@ export function CalendarWeekView({ calendar, people, editable, onCalendarChange 
                       getPersonName={getPersonName}
                       editable={editable}
                       onSave={editable ? handleItemSave : undefined}
+                      onDelete={editable ? handleItemDelete : undefined}
                     />
                   ))
                 ) : (
