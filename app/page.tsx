@@ -1,10 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import type { Config, ContentCalendar } from "@/app/types/calendar";
 import { generateCalendar, getNextWeekStart, getWeekStart, duplicateCalendarToWeek } from "@/lib/planning-algorithm";
 import { exportCalendarExcel, exportCalendarCsv, exportCalendarJson } from "@/lib/excel-io";
-import { addToCalendarHistory } from "@/lib/calendar-history";
+import { addToCalendarHistory, loadCalendarHistory } from "@/lib/calendar-history";
 import { ConfigForm } from "@/app/components/ConfigForm";
 import { ConfigTemplatePicker } from "@/app/components/ConfigTemplatePicker";
 import { CalendarWeekView } from "@/app/components/CalendarWeekView";
@@ -86,7 +87,8 @@ function defaultConfig(): Config {
   };
 }
 
-export default function Home() {
+function HomeContent() {
+  const searchParams = useSearchParams();
   const [config, setConfig] = useState<Config>(defaultConfig);
   const [calendar, setCalendar] = useState<ContentCalendar | null>(null);
   const [currentWeekStart, setCurrentWeekStart] = useState<Date | null>(null);
@@ -104,6 +106,21 @@ export default function Home() {
     }
     setHydrated(true);
   }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    const weekParam = searchParams.get("week");
+    if (!weekParam || !/^\d{4}-\d{2}-\d{2}$/.test(weekParam)) return;
+    const history = loadCalendarHistory();
+    const entry = history.find((e) => e.weekStart.slice(0, 10) === weekParam);
+    if (entry) {
+      setCalendar(entry.calendar);
+      setCurrentWeekStart(new Date(entry.calendar.weekStart));
+      if (typeof window !== "undefined") {
+        window.history.replaceState(null, "", window.location.pathname);
+      }
+    }
+  }, [hydrated, searchParams]);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -384,5 +401,25 @@ export default function Home() {
         )}
       </main>
     </div>
+  );
+}
+
+function HomeFallback() {
+  return (
+    <div className="min-h-screen bg-background font-sans">
+      <main className="flex flex-col">
+        <div className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
+          <p className="text-muted-foreground">Loading…</p>
+        </div>
+      </main>
+    </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={<HomeFallback />}>
+      <HomeContent />
+    </Suspense>
   );
 }

@@ -80,3 +80,16 @@ export function getEventsForMonth(year: number, month: number): CalendarEvent[] 
     return d.getFullYear() === year && d.getMonth() === month;
   });
 }
+
+/** Events that fall in the 7-day window starting at weekStart (Monday 00:00). */
+export function getEventsForWeek(weekStart: Date): CalendarEvent[] {
+  const start = new Date(weekStart);
+  start.setHours(0, 0, 0, 0);
+  const end = new Date(start);
+  end.setDate(end.getDate() + 6);
+  end.setHours(23, 59, 59, 999);
+  return getAllEvents().filter((e) => {
+    const t = e.date.getTime();
+    return t >= start.getTime() && t <= end.getTime();
+  });
+}
