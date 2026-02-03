@@ -27,7 +27,7 @@ No Reddit API or live posting: this app is for **planning** content and reply as
 - **Tailwind CSS**, **shadcn/ui** (Radix primitives), **lucide-react**
 - **next-themes** (theme switching), **sonner** (toasts)
 - **xlsx** for Excel export
-- **Vitest** for unit tests (planning algorithm)
+- **Vitest** (unit + component tests), **jsdom**, **@testing-library/react**, **Playwright** (E2E)
 - **pnpm** for package management
 
 ---
@@ -51,10 +51,11 @@ Open [http://localhost:3000](http://localhost:3000). The first visit shows a sho
 ### Other commands
 
 ```bash
-pnpm build    # Production build
-pnpm start    # Run production server
-pnpm test     # Run tests (Vitest)
-pnpm lint     # ESLint
+pnpm build     # Production build
+pnpm start     # Run production server
+pnpm test      # Unit + component tests (Vitest)
+pnpm test:e2e  # E2E tests (Playwright; starts dev server, install browsers with: pnpm exec playwright install chromium)
+pnpm lint      # ESLint
 ```
 
 ---
@@ -138,13 +139,16 @@ No backend or database: everything is client-side.
 
 ## Testing
 
-The planning algorithm is covered by unit tests:
+- **Unit tests (Vitest)** — Planning algorithm (`lib/planning-algorithm.test.ts`), calendar history, config templates, calendar events aggregation, Excel/CSV/JSON export (`lib/*.test.ts`). Uses **jsdom** for `localStorage` in history/templates/events tests.
+- **Component tests** — `app/components/ConfigForm.test.tsx` (render, validation, `onChange`/submit state) with **@testing-library/react** and **@testing-library/jest-dom**.
+- **E2E (Playwright)** — `e2e/home.spec.ts`: home page loads and shows the config form; full flow (fill config → generate → see week view). Run `pnpm test:e2e` (starts dev server automatically). Install browsers once: `pnpm exec playwright install chromium`.
 
 ```bash
-pnpm test
+pnpm test      # Run all Vitest tests (54+)
+pnpm test:e2e  # Run Playwright E2E (2 tests)
 ```
 
-Tests check distribution, author/reply constraints, subreddit and query caps, and deterministic regeneration.
+Unit tests cover distribution, author/reply constraints, subreddit and query caps, determinism, persistence, and export output shape.
 
 ---
 
