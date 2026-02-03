@@ -1,8 +1,10 @@
 "use client";
 
 import type { ContentCalendar, Person, CalendarItem } from "@/app/types/calendar";
+import type { QualityScore } from "@/lib/calendar-quality";
 import { Card, CardContent } from "@/components/ui/card";
 import { CalendarItemCard } from "./CalendarItemCard";
+import { CalendarQualityBadge } from "./CalendarQualityBadge";
 import { DAY_NAMES_SHORT } from "./calendar-constants";
 
 const DAY_ORDER = [0, 1, 2, 3, 4, 5, 6]; // Sun..Sat
@@ -18,11 +20,12 @@ function getDateForDay(weekStart: Date, dayOfWeek: number): Date {
 interface CalendarWeekViewProps {
   calendar: ContentCalendar;
   people: Person[];
+  quality?: QualityScore | null;
   editable?: boolean;
   onCalendarChange?: (calendar: ContentCalendar) => void;
 }
 
-export function CalendarWeekView({ calendar, people, editable, onCalendarChange }: CalendarWeekViewProps) {
+export function CalendarWeekView({ calendar, people, quality, editable, onCalendarChange }: CalendarWeekViewProps) {
   const personMap = Object.fromEntries(people.map((p) => [p.id, p]));
   const getPersonName = (id: string) => personMap[id]?.name ?? id;
 
@@ -57,13 +60,18 @@ export function CalendarWeekView({ calendar, people, editable, onCalendarChange 
 
   return (
     <div className="flex flex-col gap-4 sm:gap-6">
-      <header className="flex flex-col gap-1 sm:flex-row sm:flex-wrap sm:items-baseline sm:justify-between">
-        <h2 className="text-lg sm:text-xl font-semibold text-foreground">
-          Content calendar
-        </h2>
-        <p className="text-xs sm:text-sm text-muted-foreground">
-          {formatDate(weekStart)} – {formatDate(weekEnd)}
-        </p>
+      <header className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-baseline sm:justify-between">
+        <div className="flex flex-wrap items-baseline gap-2 sm:gap-4">
+          <h2 className="text-lg sm:text-xl font-semibold text-foreground">
+            Content calendar
+          </h2>
+          <p className="text-xs sm:text-sm text-muted-foreground">
+            {formatDate(weekStart)} – {formatDate(weekEnd)}
+          </p>
+        </div>
+        {quality != null && (
+          <CalendarQualityBadge quality={quality} />
+        )}
       </header>
       <div className="overflow-x-auto -mx-1 px-1 rounded-lg border border-border touch-pan-x">
         <div className="min-w-[320px] sm:min-w-[520px]">

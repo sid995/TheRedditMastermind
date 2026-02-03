@@ -6,16 +6,19 @@ A **Reddit content calendar planner** that helps you plan posts and reply assign
 
 ## What it does
 
-- **Configuration** — Enter company info, **people** (authors/personas), **subreddits**, and **ChatGPT queries**. Set how many posts per week you want.
-- **Calendar generation** — A deterministic planning algorithm distributes posts across the week, assigns an author and 1–2 reply people per post, and respects limits (e.g. max posts per subreddit, max uses per query).
-- **Week view** — See the current week in a 7‑day grid. Each post shows subreddit, query, author, and reply people.
-- **Edit & delete** — Change subreddit, query, day, author, or replies per post; or delete a post from the calendar.
-- **Templates** — Save the current configuration by name and load it later (e.g. “Q1 campaign”, “Product launch”).
-- **History** — Past weeks are stored locally. Reopen any week in the planner or export it.
-- **Calendar page** — Month and week views of all events from current and historical calendars; click an event for details and “Open week in planner”.
-- **Export** — Download the calendar as **Excel**, **CSV**, or **JSON**.
-- **Themes** — Light, Dark, System, and Sepia.
-- **Mobile-friendly** — Layout and controls are responsive and touch-friendly.
+- **Configuration:** Enter company info, **people** (authors/personas), **subreddits**, and **ChatGPT queries**. Set how many posts per week you want. **Validation** shows errors (e.g. invalid subreddit format, missing names) and optional warnings (duplicate queries, only 2 people).
+- **Distribution:** Choose **preferred days** (e.g. weekdays only), **max posts per subreddit**, and **max uses per query** so the algorithm respects your caps. Optional **query–subreddit rules** restrict which subreddits each query can be posted to.
+- **Calendar generation**: A deterministic planning algorithm distributes posts across the week (or preferred days), assigns an author and 1–2 reply people per post, and nudges the day spread so no day is overloaded. Same config + week gives the same calendar.
+- **Quality score**: Each calendar shows a **0–10 quality score** with a breakdown (subreddit cap, query diversity, author/reply balance, no self-reply, day spread) and a short hint when score is low.
+- **Week view**: See the current week in a 7‑day grid. Each post shows subreddit, query, author, and reply people.
+- **Edit & delete**: Change subreddit, query, day, author, or replies per post; or delete a post from the calendar.
+- **Templates:** Save the current configuration by name and load it later (e.g. “Q1 campaign”, “Product launch”).
+- **History:** Past weeks are stored locally. Reopen any week in the planner or export it.
+- **Calendar page**: Month and week views of all events from current and historical calendars; click an event for details and “Open week in planner”.
+- **Campaign page**: 4‑week grid (one row per week, 7 day columns) so you can see the next month at a glance. Today / Prev 4 weeks / Next 4 weeks; click an event for details and “Open week in planner”.
+- **Export**: Download the calendar as **Excel**, **CSV**, or **JSON**.
+- **Themes**: Light, Dark, System, and Sepia.
+- **Mobile-friendly**: Layout and controls are responsive and touch-friendly.
 
 No Reddit API or live posting: this app is for **planning** content and reply assignments only.
 
@@ -46,7 +49,7 @@ pnpm install
 pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). The first visit shows a short onboarding overlay; you can reopen it from the Help button in the header.
+Open [http://localhost:3000](http://localhost:3000). The first visit shows a short onboarding overlay; you can reopen it from the Help button in the header. Use **Planner** (home), **Calendar** (month/week), and **Campaign** (4-week grid) in the header to switch views.
 
 ### Other commands
 
@@ -65,7 +68,8 @@ pnpm lint      # ESLint
 ```
 app/
   page.tsx              # Home: config form + calendar week view
-  calendar/page.tsx     # Calendar: month/week views of all events
+  calendar/page.tsx    # Calendar: month/week views of all events
+  campaign/page.tsx    # Campaign: 4-week grid view
   components/          # App-specific UI
     AppHeader.tsx
     ConfigForm.tsx
@@ -74,6 +78,7 @@ app/
     CalendarItemCard.tsx
     CalendarItemEditDialog.tsx
     CalendarHistoryPanel.tsx
+    CalendarQualityBadge.tsx
     OnboardingDialog.tsx
     calendar-constants.ts
   contexts/
@@ -84,21 +89,24 @@ lib/
   planning-algorithm.ts   # generateCalendar, duplicateCalendarToWeek, getWeekStart
   planning-algorithm.test.ts
   calendar-history.ts     # localStorage history of past weeks
-  calendar-events.ts       # Aggregate events for calendar page
+  calendar-events.ts      # Aggregate events for calendar + campaign
+  calendar-quality.ts     # evaluateCalendarQuality (0–10 + breakdown)
   config-templates.ts     # Save/load config by name
+  config-validation.ts    # validateConfig (errors + warnings)
   excel-io.ts             # Excel, CSV, JSON export
-  calendar-quality.ts     # Optional quality metrics
 components/
-  ui/                  # shadcn/ui components
+  ui/                    # shadcn/ui components
   theme-picker.tsx
   theme-provider.tsx
+e2e/
+  home.spec.ts           # Playwright E2E (config form, full generate flow)
 ```
 
 ---
 
 ## Data model
 
-- **Config** — Company (name, website, description, goal), **people** (id, name, description), subreddits and queries as raw text (newline or comma separated), and posts per week.
+- **Config** — Company (name, website, description, goal), **people** (id, name, description), subreddits and queries as raw text (newline or comma separated), posts per week, optional **preferredDays** (0–6), **maxPostsPerSubreddit**, **maxUsesPerQuery**, and **querySubredditRules** (query → allowed subreddits).
 - **Person** — Represents an author or reply persona. Each calendar post has one author and 0–2 reply people (different from the author).
 - **CalendarItem** — One planned post: `dayOfWeek` (0 = Sunday … 6 = Saturday), `subreddit`, `query`, `authorPersonId`, `replyAssignments` (personId + order).
 - **ContentCalendar** — `weekStart` (Monday 00:00) and `items[]`.
@@ -109,14 +117,14 @@ The planner uses **Monday as the start of the week** for generation; the UI show
 
 ## How the planner works
 
-1. You submit the **configuration** (company, people, subreddits, queries, posts per week).
+1. You submit the **configuration** (company, people, subreddits, queries, posts per week, optional distribution and query–subreddit rules). **Config validation** blocks submit on errors and shows warnings.
 2. **generateCalendar(config, weekStart)**:
    - Uses a **seeded RNG** (week start timestamp) so the same inputs produce the same calendar.
-   - Distributes the requested number of posts across the seven days.
-   - For each post: picks a subreddit (max 3 posts per subreddit), a query (max 2 uses per query), one author, and 1–2 reply people (excluding the author), with simple balancing so no person is overused.
-3. The resulting **ContentCalendar** is shown in the week view, saved to **localStorage** as the “current” calendar, and appended to **calendar history**.
+   - Distributes the requested number of posts across **preferred days** (or all 7 if none set), then **nudges** the day spread so empty days get at least one post when possible.
+   - For each post: picks a query (respecting max uses per query), then a subreddit (respecting **query–subreddit rules** if set, and max posts per subreddit from config or default 3), one author, and 1–2 reply people (excluding the author), with balancing so no person is overused.
+3. The resulting **ContentCalendar** is shown in the week view with a **quality score** (0–10 and breakdown), saved to **localStorage** as the “current” calendar, and appended to **calendar history**. The view scrolls to the calendar after generate.
 
-You can then **edit** any post (subreddit, query, day, author, replies), **delete** a post, **duplicate** the week to the next week, or **generate next week** with the current config. The current calendar is persisted automatically; history is stored separately and used for the Calendar page and exports.
+You can then **edit** any post (subreddit, query, day, author, replies), **delete** a post, **duplicate** the week to the next week, or **generate next week** with the current config. The current calendar is persisted automatically; history is stored separately and used for the Calendar and Campaign pages and exports.
 
 ---
 

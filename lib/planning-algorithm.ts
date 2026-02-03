@@ -10,8 +10,8 @@ function seededRandom(seed: number) {
   };
 }
 
-const MAX_POSTS_PER_SUBREDDIT = 3;
-const MAX_USES_PER_QUERY = 2;
+const DEFAULT_MAX_POSTS_PER_SUBREDDIT = 3;
+const DEFAULT_MAX_USES_PER_QUERY = 2;
 const REPLIES_PER_POST_MIN = 1;
 const REPLIES_PER_POST_MAX = 2;
 
@@ -54,6 +54,12 @@ export function generateCalendar(config: Config, weekStart: Date): ContentCalend
   if (postsPerWeek < 1) throw new Error("postsPerWeek must be at least 1");
 
   const n = Math.min(postsPerWeek, 7 * 3); // sane cap
+  const maxPerSub = config.maxPostsPerSubreddit ?? DEFAULT_MAX_POSTS_PER_SUBREDDIT;
+  const maxPerQuery = config.maxUsesPerQuery ?? DEFAULT_MAX_USES_PER_QUERY;
+  const preferredDays = config.preferredDays?.length ? config.preferredDays : [0, 1, 2, 3, 4, 5, 6];
+  const dayPool = preferredDays.filter((d) => d >= 0 && d <= 6);
+  const effectiveDayPool = dayPool.length > 0 ? dayPool : [0, 1, 2, 3, 4, 5, 6];
+
   const items: CalendarItem[] = [];
 
   const subredditCount: Record<string, number> = Object.fromEntries(subreddits.map((s) => [s, 0]));
@@ -83,28 +89,33 @@ export function generateCalendar(config: Config, weekStart: Date): ContentCalend
     return a;
   }
 
-  // 1) Distribute n posts across 7 days (1 = Monday, 7 = Sunday; we use 0 = Monday for internal)
+  // 1) Distribute n posts across preferred days (or all 7)
   const days: number[] = [];
   for (let i = 0; i < n; i++) {
-    days.push(Math.floor(rng() * 7)); // 0..6 = Mon..Sun
+    days.push(effectiveDayPool[Math.floor(rng() * effectiveDayPool.length)]);
   }
   days.sort((a, b) => a - b);
 
   for (let i = 0; i < n; i++) {
     const dayOfWeek = days[i];
 
-    // Subreddit: cap per subreddit
-    const allowedSubreddits = subreddits.filter((s) => (subredditCount[s] ?? 0) < MAX_POSTS_PER_SUBREDDIT);
-    if (allowedSubreddits.length === 0) break;
-    const subreddit = pickWithBalance(allowedSubreddits, subredditCount, (s) => s);
-    subredditCount[subreddit] = (subredditCount[subreddit] ?? 0) + 1;
-
-    // Query: diversify
-    const allowedQueries = queries.filter((q) => (queryCount[q] ?? 0) < MAX_USES_PER_QUERY);
+    // Query: diversify (pick first so we can filter subreddits by query–subreddit rules)
+    const allowedQueries = queries.filter((q) => (queryCount[q] ?? 0) < maxPerQuery);
     const query = allowedQueries.length > 0
       ? pickWithBalance(allowedQueries, queryCount, (q) => q)
       : queries[Math.floor(rng() * queries.length)];
     queryCount[query] = (queryCount[query] ?? 0) + 1;
+
+    // Subreddit: cap per subreddit; optionally restrict by query–subreddit rules
+    const ruleForQuery = config.querySubredditRules?.find((r) => r.query === query);
+    const ruleFiltered = ruleForQuery?.subreddits?.length
+      ? ruleForQuery.subreddits.filter((s) => subreddits.includes(s))
+      : null;
+    const allowedByRule = ruleFiltered != null && ruleFiltered.length > 0 ? ruleFiltered : subreddits;
+    const allowedSubreddits = allowedByRule.filter((s) => (subredditCount[s] ?? 0) < maxPerSub);
+    if (allowedSubreddits.length === 0) break;
+    const subreddit = pickWithBalance(allowedSubreddits, subredditCount, (s) => s);
+    subredditCount[subreddit] = (subredditCount[subreddit] ?? 0) + 1;
 
     // Author person: balance
     const author = pickWithBalance(people, personAuthorCount, (p) => p.id);
@@ -136,6 +147,22 @@ export function generateCalendar(config: Config, weekStart: Date): ContentCalend
       authorPersonId: author.id,
       replyAssignments,
     });
+  }
+
+  // 2) Nudge day spread: move posts from overloaded days to empty days (deterministic)
+  const dayCount: Record<number, number> = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };
+  for (const item of items) dayCount[item.dayOfWeek] = (dayCount[item.dayOfWeek] ?? 0) + 1;
+  const emptyDays = [0, 1, 2, 3, 4, 5, 6].filter((d) => (dayCount[d] ?? 0) === 0);
+  const heavyDays = [0, 1, 2, 3, 4, 5, 6].filter((d) => (dayCount[d] ?? 0) >= 2);
+  for (const toDay of emptyDays) {
+    if (heavyDays.length === 0) break;
+    const fromDay = heavyDays[0];
+    const idx = items.findIndex((it) => it.dayOfWeek === fromDay);
+    if (idx === -1) break;
+    items[idx] = { ...items[idx], dayOfWeek: toDay };
+    dayCount[fromDay] = (dayCount[fromDay] ?? 0) - 1;
+    dayCount[toDay] = (dayCount[toDay] ?? 0) + 1;
+    if ((dayCount[fromDay] ?? 0) < 2) heavyDays.shift();
   }
 
   return {

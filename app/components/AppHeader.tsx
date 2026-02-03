@@ -25,6 +25,12 @@ export function AppHeader() {
           >
             Calendar
           </Link>
+          <Link
+            href="/campaign"
+            className="text-sm text-muted-foreground hover:text-foreground transition-colors shrink-0 py-2 px-1 -mx-1 rounded-md touch-manipulation min-h-[44px] min-w-[44px] flex items-center justify-center"
+          >
+            Campaign
+          </Link>
         </nav>
         <div className="flex items-center gap-0.5 sm:gap-1 shrink-0">
           <Button

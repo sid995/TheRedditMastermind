@@ -1,11 +1,12 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import type { Config, ContentCalendar } from "@/app/types/calendar";
 import { generateCalendar, getNextWeekStart, getWeekStart, duplicateCalendarToWeek } from "@/lib/planning-algorithm";
 import { exportCalendarExcel, exportCalendarCsv, exportCalendarJson } from "@/lib/excel-io";
 import { addToCalendarHistory, loadCalendarHistory } from "@/lib/calendar-history";
+import { evaluateCalendarQuality } from "@/lib/calendar-quality";
 import { ConfigForm } from "@/app/components/ConfigForm";
 import { ConfigTemplatePicker } from "@/app/components/ConfigTemplatePicker";
 import { CalendarWeekView } from "@/app/components/CalendarWeekView";
@@ -130,16 +131,26 @@ function HomeContent() {
     }
   }, [calendar, hydrated]);
 
+  const calendarSectionRef = useRef<HTMLElement | null>(null);
+
   const handleGenerateCalendar = useCallback(() => {
     setIsGenerating(true);
     const weekStart = getWeekStart(new Date());
     setTimeout(() => {
-      const cal = generateCalendar(config, weekStart);
-      setCalendar(cal);
-      setCurrentWeekStart(new Date(cal.weekStart));
-      addToCalendarHistory(cal);
-      setIsGenerating(false);
-      toast.success("Calendar generated");
+      try {
+        const cal = generateCalendar(config, weekStart);
+        setCalendar(cal);
+        setCurrentWeekStart(new Date(cal.weekStart));
+        addToCalendarHistory(cal);
+        toast.success("Calendar generated");
+        setTimeout(() => {
+          calendarSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+        }, 100);
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Failed to generate calendar");
+      } finally {
+        setIsGenerating(false);
+      }
     }, 0);
   }, [config]);
 
@@ -241,6 +252,12 @@ function HomeContent() {
   }, [config.people, calendar?.items]);
   const personMap = useMemo(() => Object.fromEntries(displayPeople.map((p) => [p.id, p])), [displayPeople]);
   const getPersonName = useCallback((id: string) => personMap[id]?.name ?? id, [personMap]);
+
+  const qualityScore = useMemo(() => {
+    if (!calendar || calendar.items.length === 0) return null;
+    const configForQuality = { ...config, people: displayPeople };
+    return evaluateCalendarQuality(calendar, configForQuality);
+  }, [calendar, config, displayPeople]);
 
   const handleCopySummary = useCallback(() => {
     if (!calendar) return;
@@ -356,13 +373,14 @@ function HomeContent() {
         </div>
 
         {calendar && !isGenerating && (
-          <section className="w-full px-3 pb-6 sm:px-6 sm:pb-8 lg:px-8 xl:px-12">
+          <section ref={calendarSectionRef} className="w-full px-3 pb-6 sm:px-6 sm:pb-8 lg:px-8 xl:px-12">
             <div className="mx-auto w-full max-w-[1600px]">
               <Card>
                 <CardContent className="pt-4 px-3 sm:pt-6 sm:px-6 space-y-4 sm:space-y-6">
                   <CalendarWeekView
                     calendar={calendar}
                     people={displayPeople}
+                    quality={qualityScore}
                     onCalendarChange={handleCalendarChange}
                     editable
                   />

@@ -1,12 +1,14 @@
 "use client";
 
 import type { Config, CompanyInfo, Person } from "@/app/types/calendar";
+import { DAY_NAMES } from "./calendar-constants";
+import { validateConfig } from "@/lib/config-validation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, UserPlus } from "lucide-react";
+import { AlertCircle, Loader2, UserPlus } from "lucide-react";
 
 function defaultPerson(id: string): Person {
   return { id, name: "", description: "" };
@@ -27,8 +29,10 @@ interface ConfigFormProps {
   isGenerating?: boolean;
 }
 
+const ALL_DAYS = [0, 1, 2, 3, 4, 5, 6];
+
 export function ConfigForm({ config, onChange, onSubmit, disabled, isGenerating }: ConfigFormProps) {
-  const { company, people, subreddits, queries, postsPerWeek } = config;
+  const { company, people, subreddits, queries, postsPerWeek, preferredDays, maxPostsPerSubreddit, maxUsesPerQuery, querySubredditRules } = config;
 
   const setCompany = (c: Partial<CompanyInfo>) => {
     onChange({ ...config, company: { ...company, ...c } });
@@ -66,13 +70,36 @@ export function ConfigForm({ config, onChange, onSubmit, disabled, isGenerating 
     onChange({ ...config, postsPerWeek: Math.max(1, Math.min(50, n)) });
   };
 
-  const valid =
-    company.name.trim() &&
-    people.length >= 2 &&
-    people.every((p) => p.name.trim()) &&
-    parseList(subreddits).length >= 1 &&
-    parseList(queries).length >= 1 &&
-    postsPerWeek >= 1;
+  const effectivePreferredDays = preferredDays?.length ? preferredDays : ALL_DAYS;
+  const setPreferredDay = (day: number, checked: boolean) => {
+    const current = effectivePreferredDays.filter((d) => d !== day);
+    const next = checked ? [...current, day].sort((a, b) => a - b) : current;
+    onChange({ ...config, preferredDays: next.length === 7 ? undefined : next });
+  };
+  const setMaxPostsPerSubreddit = (n: number) => {
+    const v = Math.max(1, Math.min(10, n));
+    onChange({ ...config, maxPostsPerSubreddit: v === 3 ? undefined : v });
+  };
+  const setMaxUsesPerQuery = (n: number) => {
+    const v = Math.max(1, Math.min(10, n));
+    onChange({ ...config, maxUsesPerQuery: v === 2 ? undefined : v });
+  };
+
+  const queryList = parseList(queries);
+  const subredditList = parseList(subreddits);
+  const setQuerySubredditRule = (query: string, subredditsForQuery: string[]) => {
+    const rules = config.querySubredditRules ?? [];
+    const rest = rules.filter((r) => r.query !== query);
+    const next = subredditsForQuery.length === 0 ? rest : [...rest, { query, subreddits: subredditsForQuery }];
+    onChange({ ...config, querySubredditRules: next.length === 0 ? undefined : next });
+  };
+  const getRuleSubreddits = (query: string): string => {
+    const rule = (querySubredditRules ?? []).find((r) => r.query === query);
+    return rule?.subreddits?.join(", ") ?? "";
+  };
+
+  const validation = validateConfig(config);
+  const valid = validation.valid;
 
   return (
     <form
@@ -180,6 +207,56 @@ export function ConfigForm({ config, onChange, onSubmit, disabled, isGenerating 
         </CardContent>
       </Card>
 
+      <Card>
+        <CardHeader className="px-4 pt-4 sm:px-6 sm:pt-6 pb-2">
+          <CardTitle className="text-lg">Distribution</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4 px-4 pb-4 sm:px-6 sm:pb-6">
+          <div className="grid gap-2">
+            <Label>Preferred days (posts only on these days)</Label>
+            <div className="flex flex-wrap gap-3">
+              {ALL_DAYS.map((d) => (
+                <label key={d} className="flex items-center gap-2 text-sm cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={effectivePreferredDays.includes(d)}
+                    onChange={(e) => setPreferredDay(d, e.target.checked)}
+                    className="rounded border-input"
+                  />
+                  {DAY_NAMES[d]}
+                </label>
+              ))}
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4 w-full">
+            <div className="grid gap-2 min-w-0">
+              <Label htmlFor="max-posts-subreddit">Max posts per subreddit</Label>
+              <Input
+                id="max-posts-subreddit"
+                type="number"
+                min={1}
+                max={10}
+                value={maxPostsPerSubreddit ?? 3}
+                onChange={(e) => setMaxPostsPerSubreddit(Number(e.target.value) || 1)}
+                className="min-h-[44px] w-full"
+              />
+            </div>
+            <div className="grid gap-2 min-w-0">
+              <Label htmlFor="max-uses-query">Max uses per query</Label>
+              <Input
+                id="max-uses-query"
+                type="number"
+                min={1}
+                max={10}
+                value={maxUsesPerQuery ?? 2}
+                onChange={(e) => setMaxUsesPerQuery(Number(e.target.value) || 1)}
+                className="min-h-[44px] w-full"
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       <div className="space-y-4 px-0">
         <div className="grid gap-2">
           <Label htmlFor="subreddits">Subreddits</Label>
@@ -201,6 +278,26 @@ export function ConfigForm({ config, onChange, onSubmit, disabled, isGenerating 
             rows={3}
           />
         </div>
+        {queryList.length > 0 && subredditList.length > 0 && (
+          <div className="grid gap-2">
+            <Label>Query subreddit rules (optional)</Label>
+            <p className="text-xs text-muted-foreground">Restrict which subreddits each query can be posted to. Leave empty = all subreddits.</p>
+            <div className="space-y-2 rounded-md border border-border bg-muted/20 p-3">
+              {queryList.map((q) => (
+                <div key={q} className="grid gap-1">
+                  <span className="text-xs font-medium text-muted-foreground">{q}</span>
+                  <Input
+                    type="text"
+                    placeholder="r/startups, r/SaaS (or leave empty)"
+                    value={getRuleSubreddits(q)}
+                    onChange={(e) => setQuerySubredditRule(q, parseList(e.target.value))}
+                    className="min-h-[40px] text-sm"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
         <div className="grid gap-2 max-w-[8rem]">
           <Label htmlFor="posts-per-week">Posts per week</Label>
           <Input
@@ -214,6 +311,31 @@ export function ConfigForm({ config, onChange, onSubmit, disabled, isGenerating 
           />
         </div>
       </div>
+
+      {(validation.errors.length > 0 || validation.warnings.length > 0) && (
+        <div className="space-y-2 rounded-md border border-border bg-muted/30 px-3 py-2 text-sm">
+          {validation.errors.length > 0 && (
+            <ul className="flex flex-col gap-1 text-destructive" role="alert">
+              {validation.errors.map((msg, i) => (
+                <li key={i} className="flex items-center gap-2">
+                  <AlertCircle className="size-4 shrink-0" />
+                  {msg}
+                </li>
+              ))}
+            </ul>
+          )}
+          {validation.warnings.length > 0 && (
+            <ul className="flex flex-col gap-1 text-muted-foreground">
+              {validation.warnings.map((msg, i) => (
+                <li key={i} className="flex items-center gap-2">
+                  <AlertCircle className="size-4 shrink-0 opacity-70" />
+                  {msg}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
 
       <div className="flex flex-col gap-1">
         <Button type="submit" disabled={!valid || disabled} size="lg" className="min-h-[48px] w-full sm:w-auto touch-manipulation text-base">
